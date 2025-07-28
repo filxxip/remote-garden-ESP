@@ -5,8 +5,8 @@
 
 CredentialsReceiver::CredentialsReceiver(
     std::unique_ptr<BluetoothManager> newBle,
-    std::shared_ptr<WifiManager> newWifi)
-    : ble(std::move(newBle)), wifi(newWifi) {}
+    std::shared_ptr<WifiManager> newWifi, std::shared_ptr<MqttClient> newMqtt)
+    : ble(std::move(newBle)), wifi(newWifi), mqtt(newMqtt) {}
 
 void CredentialsReceiver::init() {
     ble->addCharacteristic(
@@ -40,5 +40,7 @@ void CredentialsReceiver::init() {
 
 void CredentialsReceiver::onCredentialsReceived(const std::string& ssid,
                                                 const std::string& password) {
-    wifi->connect(ssid, password);
+    if (wifi->connect(ssid, password)) {
+        mqtt->init("mqtt://192.168.100.12:1883");
+    }
 }

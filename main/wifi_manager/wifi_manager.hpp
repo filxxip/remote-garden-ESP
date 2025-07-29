@@ -1,15 +1,23 @@
 #pragma once
 
+#include <functional>
 #include <string>
+
+#include "esp_event_base.h"
 
 class WifiManager {
    public:
     WifiManager() = default;
-    void init() const;
+    void init();
     bool connect(const std::string& ssid, const std::string& password,
                  int max_retries = 10);
+    void disconnect();
     bool isConnected() const;
+    static void onGotIp(void* arg, esp_event_base_t base, int32_t id,
+                        void* data);
+    void registerOnConnected(std::function<void()> callback);
 
    private:
-    bool connected = false;
+    std::function<void()> onConnectedCallback;
+    bool apReceived = false;
 };

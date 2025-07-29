@@ -15,6 +15,7 @@ class BluetoothManager {
 
     void addCharacteristic(GattCharacteristicDef&& def);
     void init();
+    void enable();
 
    private:
     struct CharacteristicEntry {

@@ -23,6 +23,7 @@ class CredentialsReceiver {
     std::shared_ptr<WifiManager> wifi;
     std::shared_ptr<MqttClient> mqtt;
 
+    bool mqttInitialized = false;
     std::string ssid;
     std::string password;
 };

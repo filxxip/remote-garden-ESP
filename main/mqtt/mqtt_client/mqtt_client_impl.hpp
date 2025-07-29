@@ -13,10 +13,13 @@ class MqttClient {
     MqttClient();
     ~MqttClient();
 
-    void init(const char* broker_uri);
+    void init(const char* brokerUri);
     void subscribe(const std::string& topic,
                    std::shared_ptr<MqttEventHandler> handler);
     void publish(const std::string& topic, const std::string& message);
+
+    void start();
+    void stop();
 
    private:
     esp_mqtt_client_handle_t client;

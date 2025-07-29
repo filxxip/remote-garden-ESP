@@ -3,6 +3,10 @@
 #define CHAR_UUID_SSID 0xFF01
 #define CHAR_UUID_PASS 0xFF02
 
+namespace {
+constexpr const char* MQTT_URL = "mqtt://192.168.100.3:1883";
+}
+
 CredentialsReceiver::CredentialsReceiver(
     std::unique_ptr<BluetoothManager> newBle,
     std::shared_ptr<WifiManager> newWifi, std::shared_ptr<MqttClient> newMqtt)
@@ -40,7 +44,17 @@ void CredentialsReceiver::init() {
 
 void CredentialsReceiver::onCredentialsReceived(const std::string& ssid,
                                                 const std::string& password) {
-    if (wifi->connect(ssid, password)) {
-        mqtt->init("mqtt://192.168.100.12:1883");
-    }
+    vTaskDelay(pdMS_TO_TICKS(200));
+    mqtt->stop();
+    vTaskDelay(pdMS_TO_TICKS(200));
+    wifi->disconnect();
+    vTaskDelay(pdMS_TO_TICKS(200));
+
+    wifi->registerOnConnected([this] {
+        if (!mqttInitialized) {
+            mqtt->init(MQTT_URL);
+        }
+        mqtt->start();
+    });
+    wifi->connect(ssid, password);
 }

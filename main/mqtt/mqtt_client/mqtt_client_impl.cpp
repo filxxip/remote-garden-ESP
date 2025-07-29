@@ -1,5 +1,6 @@
 #include "mqtt_client_impl.hpp"
 
+#include <esp_err.h>
 #include <esp_log.h>
 
 static const char* TAG = "MQTT";
@@ -12,14 +13,24 @@ MqttClient::~MqttClient() {
     }
 }
 
-void MqttClient::init(const char* broker_uri) {
+void MqttClient::init(const char* brokerUri) {
+    if (client) {
+        ESP_LOGW(TAG, "MQTT client already initialized");
+        return;
+    }
+
     esp_mqtt_client_config_t mqtt_cfg = {};
-    mqtt_cfg.broker.address.uri = broker_uri;
+    mqtt_cfg.broker.address.uri = brokerUri;
 
     client = esp_mqtt_client_init(&mqtt_cfg);
+    if (!client) {
+        ESP_LOGE(TAG, "Failed to initialize MQTT client");
+        return;
+    }
+
     esp_mqtt_client_register_event(client, MQTT_EVENT_ANY, mqtt_event_handler,
                                    this);
-    esp_mqtt_client_start(client);
+    ESP_LOGI(TAG, "MQTT client initialized with URI: %s", brokerUri);
 }
 
 void MqttClient::subscribe(const std::string& topic,
@@ -38,6 +49,34 @@ void MqttClient::publish(const std::string& topic, const std::string& message) {
                                              message.c_str(), 0, 1, 0);
         ESP_LOGI(TAG, "Published message id %d to topic %s", msg_id,
                  topic.c_str());
+    }
+}
+
+void MqttClient::start() {
+    if (!client) {
+        ESP_LOGE(TAG, "MQTT client not initialized. Call init() first.");
+        return;
+    }
+
+    esp_err_t err = esp_mqtt_client_start(client);
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "MQTT client started");
+    } else {
+        ESP_LOGE(TAG, "Failed to start MQTT client: %s", esp_err_to_name(err));
+    }
+}
+
+void MqttClient::stop() {
+    if (!client) {
+        ESP_LOGW(TAG, "MQTT client not initialized");
+        return;
+    }
+
+    esp_err_t err = esp_mqtt_client_stop(client);
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "MQTT client stopped");
+    } else {
+        ESP_LOGE(TAG, "Failed to stop MQTT client: %s", esp_err_to_name(err));
     }
 }
 

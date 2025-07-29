@@ -36,11 +36,16 @@ void MqttClient::init(const char* brokerUri) {
 void MqttClient::subscribe(const std::string& topic,
                            std::shared_ptr<MqttEventHandler> handler) {
     std::lock_guard<std::mutex> lock(handlersMutex);
-
     handlers[topic] = handler;
-    esp_mqtt_client_subscribe(client, topic.c_str(), 1);
 
-    ESP_LOGI(TAG, "Subscribed to topic %s", topic.c_str());
+    auto msg_id = esp_mqtt_client_subscribe(client, topic.c_str(), 1);
+    if (msg_id >= 0) {
+        ESP_LOGI(TAG, "Successfully subscribed to topic: %s (msg_id=%d)",
+                 topic.c_str(), msg_id);
+    } else {
+        ESP_LOGE(TAG, "Failed to subscribe to topic: %s (err=%d)",
+                 topic.c_str(), msg_id);
+    }
 }
 
 void MqttClient::publish(const std::string& topic, const std::string& message) {
@@ -50,6 +55,11 @@ void MqttClient::publish(const std::string& topic, const std::string& message) {
         ESP_LOGI(TAG, "Published message id %d to topic %s", msg_id,
                  topic.c_str());
     }
+}
+
+void MqttClient::registerOnConnected(
+    std::function<void(MqttClient&)> callback) {
+    onConnectedCallback = std::move(callback);
 }
 
 void MqttClient::start() {
@@ -94,6 +104,9 @@ void MqttClient::mqtt_event_handler(void* handler_args, esp_event_base_t base,
         }
         case MQTT_EVENT_CONNECTED:
             ESP_LOGI(TAG, "MQTT connected");
+            if (self->onConnectedCallback) {
+                self->onConnectedCallback(*self);
+            }
             break;
         case MQTT_EVENT_DISCONNECTED:
             ESP_LOGI(TAG, "MQTT disconnected");

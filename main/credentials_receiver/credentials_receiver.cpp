@@ -1,5 +1,7 @@
 #include "credentials_receiver.hpp"
 
+#include "mqtt/my_handler/my_handler.hpp"
+
 #define CHAR_UUID_SSID 0xFF01
 #define CHAR_UUID_PASS 0xFF02
 
@@ -49,6 +51,10 @@ void CredentialsReceiver::onCredentialsReceived(const std::string& ssid,
     vTaskDelay(pdMS_TO_TICKS(200));
     wifi->disconnect();
     vTaskDelay(pdMS_TO_TICKS(200));
+
+    mqtt->registerOnConnected([](MqttClient& client) {
+        client.subscribe("test/topic", std::make_shared<MyHandler>());
+    });
 
     wifi->registerOnConnected([this] {
         if (!mqttInitialized) {

@@ -17,6 +17,7 @@ class MqttClient {
     void subscribe(const std::string& topic,
                    std::shared_ptr<MqttEventHandler> handler);
     void publish(const std::string& topic, const std::string& message);
+    void registerOnConnected(std::function<void(MqttClient&)> callback);
 
     void start();
     void stop();
@@ -25,6 +26,7 @@ class MqttClient {
     esp_mqtt_client_handle_t client;
     std::unordered_map<std::string, std::shared_ptr<MqttEventHandler>> handlers;
     std::mutex handlersMutex;
+    std::function<void(MqttClient&)> onConnectedCallback;
 
     static void mqtt_event_handler(void* handler_args, esp_event_base_t base,
                                    int32_t event_id, void* event_data);

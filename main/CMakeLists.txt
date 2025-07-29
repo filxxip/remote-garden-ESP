@@ -5,6 +5,7 @@ idf_component_register(
          "nvs_manager/nvs_manager.cpp"
          "credentials_receiver/credentials_receiver.cpp"
          "mqtt/mqtt_client/mqtt_client_impl.cpp"
-    INCLUDE_DIRS "." "wifi_manager" "bluetooth_manager" "nvs_manager" "credentials_receiver" "mqtt" "mqtt/mqtt_client"
+         "mqtt/my_handler/my_handler.cpp"
+    INCLUDE_DIRS "." "wifi_manager" "bluetooth_manager" "nvs_manager" "credentials_receiver" "mqtt" "mqtt/mqtt_client" "mqtt/my_handler"
     REQUIRES bt nvs_flash mqtt
 )

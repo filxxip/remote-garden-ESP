@@ -46,15 +46,11 @@ void CredentialsReceiver::init() {
 
 void CredentialsReceiver::onCredentialsReceived(const std::string& ssid,
                                                 const std::string& password) {
-    vTaskDelay(pdMS_TO_TICKS(200));
+    vTaskDelay(pdMS_TO_TICKS(600));
     mqtt->stop();
-    vTaskDelay(pdMS_TO_TICKS(200));
+    vTaskDelay(pdMS_TO_TICKS(600));
     wifi->disconnect();
-    vTaskDelay(pdMS_TO_TICKS(200));
-
-    mqtt->registerOnConnected([](MqttClient& client) {
-        client.subscribe("test/topic", std::make_shared<MyHandler>());
-    });
+    vTaskDelay(pdMS_TO_TICKS(600));
 
     wifi->registerOnConnected([this] {
         if (!mqttInitialized) {

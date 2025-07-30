@@ -4,6 +4,7 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "mqtt/mqtt_event_handler.hpp"
 #include "mqtt_client.h"
@@ -16,6 +17,7 @@ class MqttClient {
     void init(const char* brokerUri);
     void subscribe(const std::string& topic,
                    std::shared_ptr<MqttEventHandler> handler);
+    void unsubscribe(const std::string& topic);
     void publish(const std::string& topic, const std::string& message);
     void registerOnConnected(std::function<void(MqttClient&)> callback);
 

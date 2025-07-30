@@ -42,23 +42,32 @@ bool WifiManager::connect(const std::string& ssid, const std::string& password,
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
-    vTaskDelay(pdMS_TO_TICKS(100));
-    ESP_ERROR_CHECK(esp_wifi_connect());
+    vTaskDelay(pdMS_TO_TICKS(100));  // daj Wi-Fi chwilę na start
 
-    ESP_LOGI(TAG, "Connecting to SSID: %s, PASSWORD: %s", ssid.c_str(),
-             password.c_str());
+    esp_err_t err = esp_wifi_connect();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_wifi_connect() failed: %s", esp_err_to_name(err));
+        return false;
+    }
+
+    ESP_LOGI(TAG, "Connecting to SSID: %s", ssid.c_str());
 
     for (int retry = 1; retry <= max_retries; ++retry) {
-        vTaskDelay(pdMS_TO_TICKS(2000));
+        vTaskDelay(pdMS_TO_TICKS(1000));
         if (check_connection()) {
             ESP_LOGI(TAG, "Connected to WiFi");
             return true;
         }
         ESP_LOGW(TAG, "Retry %d/%d...", retry, max_retries);
-        esp_wifi_connect();
+
+        if ((err = esp_wifi_connect()) != ESP_OK) {
+            ESP_LOGE(TAG, "esp_wifi_connect() failed on retry: %s",
+                     esp_err_to_name(err));
+            break;
+        }
     }
 
-    ESP_LOGE(TAG, "Failed to connect after %d retries", max_retries);
+    ESP_LOGE(TAG, "Failed to connect to WiFi after %d retries", max_retries);
     return false;
 }
 

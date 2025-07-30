@@ -48,6 +48,22 @@ void MqttClient::subscribe(const std::string& topic,
     }
 }
 
+void MqttClient::unsubscribe(const std::string& topic) {
+    std::lock_guard<std::mutex> lock(handlersMutex);
+    handlers.erase(topic);
+
+    if (client) {
+        int msg_id = esp_mqtt_client_unsubscribe(client, topic.c_str());
+        if (msg_id >= 0) {
+            ESP_LOGI(TAG, "Unsubscribed from topic: %s (msg_id=%d)",
+                     topic.c_str(), msg_id);
+        } else {
+            ESP_LOGE(TAG, "Failed to unsubscribe from topic: %s (err=%d)",
+                     topic.c_str(), msg_id);
+        }
+    }
+}
+
 void MqttClient::publish(const std::string& topic, const std::string& message) {
     if (client) {
         int msg_id = esp_mqtt_client_publish(client, topic.c_str(),
@@ -118,10 +134,18 @@ void MqttClient::mqtt_event_handler(void* handler_args, esp_event_base_t base,
 
 void MqttClient::handleMessage(const std::string& topic,
                                const std::string& payload) {
-    std::lock_guard<std::mutex> lock(handlersMutex);
-    auto it = handlers.find(topic);
-    if (it != handlers.end() && it->second) {
-        it->second->operate(topic, payload);
+    std::shared_ptr<MqttEventHandler> handler;
+
+    {
+        std::lock_guard<std::mutex> lock(handlersMutex);
+        auto it = handlers.find(topic);
+        if (it != handlers.end()) {
+            handler = it->second;
+        }
+    }
+
+    if (handler) {
+        handler->operate(topic, payload);
     } else {
         ESP_LOGW(TAG, "No handler registered for topic %s", topic.c_str());
     }

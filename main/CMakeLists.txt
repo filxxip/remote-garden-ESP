@@ -26,6 +26,12 @@ idf_component_register(
         "clients/heating_mat_client/mock/heating_mat_client_mock.cpp"
         "clients/heating_mat_client/real/heating_mat_client_real.cpp"
 
+        "clients/sensor_client.cpp"
+        "clients/light_client/mock/light_sensor_client_mock.cpp"
+        "clients/light_client/real/light_sensor_client_real.cpp"
+
+        "sensor_polling_manager/sensor_polling_manager.cpp"
+
     INCLUDE_DIRS "." 
-    REQUIRES bt nvs_flash mqtt json driver
+    REQUIRES bt nvs_flash mqtt json driver esp_adc
 )

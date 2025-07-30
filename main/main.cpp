@@ -6,6 +6,7 @@
 #include "clients/atomize_client/mock/atomize_client_mock.hpp"
 #include "clients/fan_client/mock/fan_client_mock.hpp"
 #include "clients/heating_mat_client/mock/heating_mat_client_mock.hpp"
+#include "clients/light_client/mock/light_sensor_client_mock.hpp"
 #include "clients/water_client/mock/water_client_mock.hpp"
 #include "credentials_receiver/credentials_receiver.hpp"
 #include "freertos/FreeRTOS.h"
@@ -15,6 +16,7 @@
 #include "mqtt/mqtt_client/mqtt_client_impl.hpp"
 #include "mqtt/my_handler/my_handler.hpp"
 #include "nvs_manager/nvs_manager.hpp"
+#include "sensor_polling_manager/sensor_polling_manager.hpp"
 #include "wifi_manager/wifi_manager.hpp"
 
 static const char* TAG = "Main";
@@ -32,7 +34,10 @@ extern "C" void app_main(void) {
     auto gardenHandler = std::make_shared<GardenSpecifierHandler>();
     auto myHandler = std::make_shared<MyHandler>();
 
-    gardenHandler->setCallback([mqtt](const auto& prev, auto updated) {
+    std::unique_ptr<SensorPollingManager> sensorManager;
+
+    gardenHandler->setCallback([mqtt, &sensorManager](const auto& prev,
+                                                      auto updated) {
         ESP_LOGI(TAG, "Garden callback triggered");
 
         if (prev.has_value()) {
@@ -49,6 +54,11 @@ extern "C" void app_main(void) {
             std::make_unique<WaterClientMock>(mqtt, updated));
         mqtt->subscribe("device/" + std::to_string(updated) + "/control",
                         std::move(deviceHandler));
+
+        auto light = std::make_shared<LightSensorClientMock>(mqtt, updated);
+        std::vector<std::shared_ptr<SensorClient>> sensors = {light};
+
+        sensorManager = std::make_unique<SensorPollingManager>(sensors, 3000);
     });
 
     mqtt->registerOnConnected([gardenHandler](MqttClient& client) {

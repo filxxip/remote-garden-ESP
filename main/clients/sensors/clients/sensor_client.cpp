@@ -13,8 +13,7 @@ SensorClient::SensorClient(std::shared_ptr<MqttClient> mqttClient,
                            const SensorType type, const int gardenId)
     : sensorType(type),
       mqtt(std::move(mqttClient)),
-      topic("device/" + std::to_string(gardenId) + "/sensor/" +
-            enumToString(type)) {}
+      topic("device/" + std::to_string(gardenId) + "/sensor") {}
 
 void SensorClient::storeReading() {
     auto value = readValue();

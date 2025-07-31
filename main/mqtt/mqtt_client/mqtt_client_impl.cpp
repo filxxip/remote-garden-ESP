@@ -2,6 +2,9 @@
 
 #include <esp_err.h>
 #include <esp_log.h>
+#include <esp_spiffs.h>
+
+#include "utils/device_provisioner/device_provisioner.hpp"
 
 namespace {
 constexpr const char* TAG = "MQTT";
@@ -21,8 +24,19 @@ void MqttClient::init(const char* brokerUri) {
         return;
     }
 
+    auto [clientKey, clientCert, caCert, deviceId] =
+        DeviceProvisioner::loadTlsCredentials();
+
     esp_mqtt_client_config_t mqtt_cfg = {};
     mqtt_cfg.broker.address.uri = brokerUri;
+    mqtt_cfg.credentials.client_id = deviceId.c_str();
+    mqtt_cfg.credentials.authentication.certificate = clientCert.c_str();
+    mqtt_cfg.credentials.authentication.certificate_len = 0;
+    mqtt_cfg.credentials.authentication.key = clientKey.c_str();
+    mqtt_cfg.credentials.authentication.key_len = 0;
+    mqtt_cfg.broker.verification.certificate = caCert.c_str();
+    mqtt_cfg.broker.verification.certificate_len = 0;
+    mqtt_cfg.broker.verification.skip_cert_common_name_check = false;
 
     client = esp_mqtt_client_init(&mqtt_cfg);
     if (!client) {

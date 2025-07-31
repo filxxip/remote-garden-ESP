@@ -7,16 +7,15 @@
 #include "clients/actuators/factory/actuator_factory.hpp"
 #include "clients/sensors/factory/sensor_factory.hpp"
 #include "credentials_receiver/credentials_receiver.hpp"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include "mqtt/handlers/device_control_handler/device_control_handler.hpp"
 #include "mqtt/handlers/garden_specifier_handler/garden_specifier_handler.hpp"
 #include "mqtt/mqtt_client/mqtt_client_impl.hpp"
-#include "mqtt/my_handler/my_handler.hpp"
-#include "nvs_manager/nvs_manager.hpp"
 #include "sensor_polling_manager/sensor_polling_manager.hpp"
 #include "sensor_polling_manager/sensor_publisher/sensor_publisher.hpp"
 #include "sensor_polling_manager/sensor_reader/sensor_reader.hpp"
+#include "utils/device_provisioner/device_provisioner.hpp"
+#include "utils/nvs_manager/nvs_manager.hpp"
+#include "utils/spiffs_manager/spiffs_manager.hpp"
 #include "wifi_manager/wifi_manager.hpp"
 
 namespace {
@@ -24,8 +23,11 @@ constexpr const char* TAG = "Main";
 }
 
 extern "C" void app_main(void) {
-    NvsManager nvs;
-    if (!nvs.init()) {
+    if (!SpiffsManager::init()) {
+        ESP_LOGE(TAG, "Failed to initialize Spiffs!");
+        return;
+    }
+    if (!NvsManager::init()) {
         ESP_LOGE(TAG, "Failed to initialize NVS!");
         return;
     }

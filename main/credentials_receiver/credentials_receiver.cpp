@@ -1,13 +1,16 @@
 #include "credentials_receiver.hpp"
 
-#include "mqtt/my_handler/my_handler.hpp"
+#include <esp_log.h>
+
+#include "utils/device_provisioner/device_provisioner.hpp"
 
 #define CHAR_UUID_SSID 0xFF01
 #define CHAR_UUID_PASS 0xFF02
 
 namespace {
 constexpr const char* MQTT_URL = "mqtt://192.168.100.3:1883";
-}
+constexpr const char* TAG = "CredentialsReceiver";
+}  // namespace
 
 CredentialsReceiver::CredentialsReceiver(
     std::unique_ptr<BluetoothManager> newBle,
@@ -53,6 +56,10 @@ void CredentialsReceiver::onCredentialsReceived(const std::string& ssid,
     vTaskDelay(pdMS_TO_TICKS(600));
 
     wifi->registerOnConnected([this] {
+        if (!DeviceProvisioner::ensureProvisioning()) {
+            ESP_LOGE(TAG, "Provisioning failed after Wi-Fi connected.");
+            return;
+        }
         if (!mqttInitialized) {
             mqtt->init(MQTT_URL);
         }

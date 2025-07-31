@@ -1,5 +1,12 @@
 #include "nvs_manager.hpp"
 
+#include <nvs.h>
+#include <nvs_flash.h>
+
+namespace {
+constexpr const char* TAG = "NvsManager";
+}
+
 bool NvsManager::init() {
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "clients/actuator_client.hpp"
+#include "clients/actuators/clients/actuator_client.hpp"
 #include "mqtt/mqtt_event_handler.hpp"
 
 class DeviceControlHandler : public MqttEventHandler {

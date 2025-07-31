@@ -22,7 +22,7 @@ void SensorPollingManager::pollingTask(void* pvParameters) {
     while (true) {
         for (const auto& sensor : self->sensors) {
             if (sensor) {
-                sensor->publishReading();
+                self->action(sensor);
             }
         }
         vTaskDelay(pdMS_TO_TICKS(self->intervalMs));

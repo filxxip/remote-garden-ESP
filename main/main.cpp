@@ -1,13 +1,11 @@
 #include <esp_log.h>
 
-#include <cstdio>
+#include <memory>
+#include <vector>
 
 #include "bluetooth_manager/bluetooth_manager.hpp"
-#include "clients/atomize_client/mock/atomize_client_mock.hpp"
-#include "clients/fan_client/mock/fan_client_mock.hpp"
-#include "clients/heating_mat_client/mock/heating_mat_client_mock.hpp"
-#include "clients/light_client/mock/light_sensor_client_mock.hpp"
-#include "clients/water_client/mock/water_client_mock.hpp"
+#include "clients/actuators/factory/actuator_factory.hpp"
+#include "clients/sensors/factory/sensor_factory.hpp"
 #include "credentials_receiver/credentials_receiver.hpp"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -17,9 +15,13 @@
 #include "mqtt/my_handler/my_handler.hpp"
 #include "nvs_manager/nvs_manager.hpp"
 #include "sensor_polling_manager/sensor_polling_manager.hpp"
+#include "sensor_polling_manager/sensor_publisher/sensor_publisher.hpp"
+#include "sensor_polling_manager/sensor_reader/sensor_reader.hpp"
 #include "wifi_manager/wifi_manager.hpp"
 
-static const char* TAG = "Main";
+namespace {
+constexpr const char* TAG = "Main";
+}
 
 extern "C" void app_main(void) {
     NvsManager nvs;
@@ -30,14 +32,16 @@ extern "C" void app_main(void) {
 
     auto wifi = std::make_shared<WifiManager>();
     wifi->init();
+
     auto mqtt = std::make_shared<MqttClient>();
     auto gardenHandler = std::make_shared<GardenSpecifierHandler>();
-    auto myHandler = std::make_shared<MyHandler>();
 
-    std::unique_ptr<SensorPollingManager> sensorManager;
+    auto actuatorFactory = std::make_unique<MockActuatorFactory>();
+    auto sensorFactory = std::make_unique<MockSensorFactory>();
 
-    gardenHandler->setCallback([mqtt, &sensorManager](const auto& prev,
-                                                      auto updated) {
+    std::array<std::unique_ptr<SensorPollingManager>, 2> sensorManagers;
+
+    gardenHandler->setCallback([&](const auto& prev, auto updated) {
         ESP_LOGI(TAG, "Garden callback triggered");
 
         if (prev.has_value()) {
@@ -47,18 +51,30 @@ extern "C" void app_main(void) {
                               "/control");
         }
 
+        auto atomize =
+            actuatorFactory->create(ActuatorType::Atomize, mqtt, updated);
+        auto fan = actuatorFactory->create(ActuatorType::Fan, mqtt, updated);
+        auto heating =
+            actuatorFactory->create(ActuatorType::HeatingMat, mqtt, updated);
+        auto water =
+            actuatorFactory->create(ActuatorType::Water, mqtt, updated);
+
         auto deviceHandler = std::make_shared<DeviceControlHandler>(
-            std::make_unique<AtomizeClientMock>(mqtt, updated),
-            std::make_unique<FanClientMock>(mqtt, updated),
-            std::make_unique<HeatingMatClientMock>(mqtt, updated),
-            std::make_unique<WaterClientMock>(mqtt, updated));
+            std::move(atomize), std::move(fan), std::move(heating),
+            std::move(water));
+
         mqtt->subscribe("device/" + std::to_string(updated) + "/control",
                         std::move(deviceHandler));
 
-        auto light = std::make_shared<LightSensorClientMock>(mqtt, updated);
-        std::vector<std::shared_ptr<SensorClient>> sensors = {light};
+        std::vector<std::shared_ptr<SensorClient>> sensors = {
+            sensorFactory->create(SensorType::Light, mqtt, updated),
+            sensorFactory->create(SensorType::AirHumidity, mqtt, updated),
+            sensorFactory->create(SensorType::SoilMoisture, mqtt, updated),
+            sensorFactory->create(SensorType::AirTemperature, mqtt, updated),
+        };
 
-        sensorManager = std::make_unique<SensorPollingManager>(sensors, 3000);
+        sensorManagers = {std::make_unique<SensorReader>(sensors, 3000),
+                          std::make_unique<SensorPublisher>(sensors, 20000)};
     });
 
     mqtt->registerOnConnected([gardenHandler](MqttClient& client) {
@@ -70,6 +86,6 @@ extern "C" void app_main(void) {
     credentialReceiver.init();
 
     while (true) {
-        vTaskDelay(pdMS_TO_TICKS(3000));
+        vTaskDelay(pdMS_TO_TICKS(10000));
     }
 }

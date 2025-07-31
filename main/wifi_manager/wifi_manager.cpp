@@ -32,7 +32,7 @@ void WifiManager::init() {
 }
 
 bool WifiManager::connect(const std::string& ssid, const std::string& password,
-                          int max_retries) {
+                          const int max_retries) {
     wifi_config_t wifi_config = {};
     std::strncpy((char*)wifi_config.sta.ssid, ssid.c_str(),
                  sizeof(wifi_config.sta.ssid) - 1);
@@ -42,7 +42,7 @@ bool WifiManager::connect(const std::string& ssid, const std::string& password,
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
-    vTaskDelay(pdMS_TO_TICKS(100));  // daj Wi-Fi chwilę na start
+    vTaskDelay(pdMS_TO_TICKS(100));
 
     esp_err_t err = esp_wifi_connect();
     if (err != ESP_OK) {
@@ -95,7 +95,7 @@ void WifiManager::onGotIp(void* arg, esp_event_base_t base, int32_t id,
                           void* data) {
     auto* self = static_cast<WifiManager*>(arg);
     self->apReceived = true;
-    ip_event_got_ip_t* event = static_cast<ip_event_got_ip_t*>(data);
+    auto* event = static_cast<ip_event_got_ip_t*>(data);
     ESP_LOGI(TAG, "Got IP: " IPSTR, IP2STR(&event->ip_info.ip));
 
     if (self->onConnectedCallback) {

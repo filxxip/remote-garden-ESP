@@ -10,7 +10,7 @@ class WifiManager {
     WifiManager() = default;
     void init();
     bool connect(const std::string& ssid, const std::string& password,
-                 int max_retries = 10);
+                 const int max_retries = 10);
     void disconnect();
     bool isConnected() const;
     static void onGotIp(void* arg, esp_event_base_t base, int32_t id,

@@ -3,7 +3,9 @@
 #include <esp_err.h>
 #include <esp_log.h>
 
-static const char* TAG = "MQTT";
+namespace {
+constexpr const char* TAG = "MQTT";
+}
 
 MqttClient::MqttClient() : client(nullptr) {}
 
@@ -64,13 +66,22 @@ void MqttClient::unsubscribe(const std::string& topic) {
     }
 }
 
-void MqttClient::publish(const std::string& topic, const std::string& message) {
+bool MqttClient::publish(const std::string& topic, const std::string& message) {
     if (client) {
         int msg_id = esp_mqtt_client_publish(client, topic.c_str(),
                                              message.c_str(), 0, 1, 0);
-        ESP_LOGI(TAG, "Published message id %d to topic %s", msg_id,
-                 topic.c_str());
+        if (msg_id >= 0) {
+            ESP_LOGI(TAG, "Published message id %d to topic %s", msg_id,
+                     topic.c_str());
+            return true;
+        } else {
+            ESP_LOGW(TAG, "Failed to publish message to topic %s",
+                     topic.c_str());
+        }
+    } else {
+        ESP_LOGW(TAG, "MQTT client not initialized");
     }
+    return false;
 }
 
 void MqttClient::registerOnConnected(

@@ -18,7 +18,7 @@ class MqttClient {
     void subscribe(const std::string& topic,
                    std::shared_ptr<MqttEventHandler> handler);
     void unsubscribe(const std::string& topic);
-    void publish(const std::string& topic, const std::string& message);
+    bool publish(const std::string& topic, const std::string& message);
     void registerOnConnected(std::function<void(MqttClient&)> callback);
 
     void start();

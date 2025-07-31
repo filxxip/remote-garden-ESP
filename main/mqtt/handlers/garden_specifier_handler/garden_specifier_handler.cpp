@@ -4,7 +4,9 @@
 
 #include "utils/json_utils/json_utils.hpp"
 
-static const char* TAG = "GardenSpecifierHandler";
+namespace {
+constexpr const char* TAG = "GardenSpecifierHandler";
+}
 
 void GardenSpecifierHandler::operate(const std::string& topic,
                                      const std::string& payload) {

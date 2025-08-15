@@ -24,7 +24,7 @@ idf_component_register(
         clients/sensors/sensor_type.cpp
         credentials_receiver/credentials_receiver.cpp
         mqtt/handlers/device_control_handler/device_control_handler.cpp
-        mqtt/handlers/garden_specifier_handler/garden_specifier_handler.cpp
+        mqtt/handlers/reset_handler/reset_handler.cpp
         mqtt/mqtt_client/mqtt_client_impl.cpp
         sensor_polling_manager/sensor_polling_manager.cpp
         sensor_polling_manager/sensor_publisher/sensor_publisher.cpp

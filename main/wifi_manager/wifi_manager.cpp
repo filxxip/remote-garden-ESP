@@ -111,3 +111,17 @@ void WifiManager::onGotIp(void* arg, esp_event_base_t base, int32_t id,
         self->onConnectedCallback();
     }
 }
+
+std::string WifiManager::getBssid() const {
+    wifi_ap_record_t ap_info;
+    if (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) {
+        char bssid_str[18];
+        snprintf(bssid_str, sizeof(bssid_str), "%02X:%02X:%02X:%02X:%02X:%02X",
+                 ap_info.bssid[0], ap_info.bssid[1], ap_info.bssid[2],
+                 ap_info.bssid[3], ap_info.bssid[4], ap_info.bssid[5]);
+        return std::string(bssid_str);
+    } else {
+        ESP_LOGW(TAG, "BSSID not available (not connected?)");
+        return {};
+    }
+}

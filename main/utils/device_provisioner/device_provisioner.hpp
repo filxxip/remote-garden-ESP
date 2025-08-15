@@ -9,5 +9,6 @@ bool isProvisioned();
 
 using TlsCred = std::tuple<std::string, std::string, std::string, std::string>;
 TlsCred loadTlsCredentials();
+bool removeProvisioned();
 
 }  // namespace DeviceProvisioner

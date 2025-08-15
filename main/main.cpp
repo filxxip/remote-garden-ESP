@@ -8,7 +8,7 @@
 #include "clients/sensors/factory/sensor_factory.hpp"
 #include "credentials_receiver/credentials_receiver.hpp"
 #include "mqtt/handlers/device_control_handler/device_control_handler.hpp"
-#include "mqtt/handlers/garden_specifier_handler/garden_specifier_handler.hpp"
+#include "mqtt/handlers/reset_handler/reset_handler.hpp"
 #include "mqtt/mqtt_client/mqtt_client_impl.hpp"
 #include "sensor_polling_manager/sensor_polling_manager.hpp"
 #include "sensor_polling_manager/sensor_publisher/sensor_publisher.hpp"
@@ -37,28 +37,31 @@ extern "C" void app_main(void) {
 
     auto mqtt = std::make_shared<MqttClient>();
 
-    auto actuatorFactory = std::make_unique<MockActuatorFactory>();
-    auto sensorFactory = std::make_unique<MockSensorFactory>();
+    MockActuatorFactory actuatorFactory;
+    MockSensorFactory sensorFactory;
 
     std::array<std::unique_ptr<SensorPollingManager>, 2> sensorManagers;
 
-    mqtt->registerOnConnected([mqtt](MqttClient& client) {
-        auto atomize = actuatorFactory->create(ActuatorType::Atomize, mqtt);
-        auto fan = actuatorFactory->create(ActuatorType::Fan, mqtt);
-        auto heating = actuatorFactory->create(ActuatorType::HeatingMat, mqtt);
-        auto water = actuatorFactory->create(ActuatorType::Water, mqtt);
+    mqtt->registerOnConnected([mqtt, &actuatorFactory, &sensorFactory,
+                               &sensorManagers, wifi](MqttClient& client) {
+        auto atomize = actuatorFactory.create(ActuatorType::Atomize, mqtt);
+        auto fan = actuatorFactory.create(ActuatorType::Fan, mqtt);
+        auto heating = actuatorFactory.create(ActuatorType::HeatingMat, mqtt);
+        auto water = actuatorFactory.create(ActuatorType::Water, mqtt);
 
         auto deviceHandler = std::make_shared<DeviceControlHandler>(
             std::move(atomize), std::move(fan), std::move(heating),
             std::move(water));
+        auto resetHandler = std::make_shared<ResetHandler>(wifi, mqtt);
 
         mqtt->subscribe("device/control", std::move(deviceHandler));
+        mqtt->subscribe("reset", std::move(resetHandler));
 
         std::vector<std::shared_ptr<SensorClient>> sensors = {
-            sensorFactory->create(SensorType::Light, mqtt),
-            sensorFactory->create(SensorType::AirHumidity, mqtt),
-            sensorFactory->create(SensorType::SoilMoisture, mqtt),
-            sensorFactory->create(SensorType::AirTemperature, mqtt),
+            sensorFactory.create(SensorType::Light, mqtt),
+            sensorFactory.create(SensorType::AirHumidity, mqtt),
+            sensorFactory.create(SensorType::SoilMoisture, mqtt),
+            sensorFactory.create(SensorType::AirTemperature, mqtt),
         };
 
         sensorManagers = {std::make_unique<SensorReader>(sensors, 3000),

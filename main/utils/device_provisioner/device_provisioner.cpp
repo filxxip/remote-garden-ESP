@@ -13,6 +13,7 @@ constexpr const char* DEVICE_SECRET_PATH = "/spiffs/device_secret.txt";
 constexpr const char* CLIENT_KEY_PATH = "/spiffs/client.key";
 constexpr const char* CLIENT_CERT_PATH = "/spiffs/client.crt";
 constexpr const char* CA_CERT_PATH = "/spiffs/ca.crt";
+constexpr const char* USER_KEY_PATH = "/spiffs/user.txt";
 
 bool readFile(const char* path, std::string& out) {
     return FileManager::readFromFile(path, out);
@@ -25,12 +26,14 @@ bool saveKeyAndCert(const std::string& key, const std::string& cert) {
 
 bool sendCsrAndGetCert(const std::string& deviceId,
                        const std::string& deviceSecret,
-                       const std::string& csrPem, std::string& certOut) {
+                       const std::string& userKey, const std::string& csrPem,
+                       std::string& certOut) {
     return HttpManager("https://your.server.url")
         .path("/register")
         .contentType("application/x-pem-file")
         .header("X-Device-ID", deviceId)
         .header("X-Device-Secret", deviceSecret)
+        .header("X-User-Key", userKey)
         .body(csrPem)
         .post(certOut, TAG);
 }
@@ -48,10 +51,11 @@ bool DeviceProvisioner::ensureProvisioning() {
         return true;
     }
 
-    std::string deviceId, deviceSecret;
+    std::string deviceId, deviceSecret, userKey;
     if (!readFile(DEVICE_ID_PATH, deviceId) ||
-        !readFile(DEVICE_SECRET_PATH, deviceSecret)) {
-        ESP_LOGE(TAG, "Missing device_id or secret");
+        !readFile(DEVICE_SECRET_PATH, deviceSecret) ||
+        !readFile(USER_KEY_PATH, userKey)) {
+        ESP_LOGE(TAG, "Missing device_id, secret, or user_key");
         return false;
     }
 
@@ -62,7 +66,8 @@ bool DeviceProvisioner::ensureProvisioning() {
     }
 
     std::string signedCert;
-    if (!sendCsrAndGetCert(deviceId, deviceSecret, csrPem, signedCert)) {
+    if (!sendCsrAndGetCert(deviceId, deviceSecret, userKey, csrPem,
+                           signedCert)) {
         ESP_LOGE(TAG, "Failed to register and get cert");
         return false;
     }
@@ -91,4 +96,12 @@ DeviceProvisioner::TlsCred DeviceProvisioner::loadTlsCredentials() {
         ESP_LOGE(TAG, "Failed to load device_id.txt");
     }
     return {key, cert, ca, device};
+}
+
+bool DeviceProvisioner::removeProvisioned() {
+    bool ok = true;
+    ok &= FileManager::deleteFile(CLIENT_KEY_PATH);
+    ok &= FileManager::deleteFile(CLIENT_CERT_PATH);
+    ok &= FileManager::deleteFile(USER_KEY_PATH);
+    return ok;
 }

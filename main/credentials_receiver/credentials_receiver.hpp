@@ -16,9 +16,12 @@ class CredentialsReceiver {
 
    protected:
     virtual void onCredentialsReceived(const std::string& ssid,
-                                       const std::string& password);
+                                       const std::string& password,
+                                       const std::string& userKey);
 
    private:
+    void CredentialsReceiver::handleBleWrite(std::string& target,
+                                             const uint8_t* data, uint16_t len);
     std::unique_ptr<BluetoothManager> ble;
     std::shared_ptr<WifiManager> wifi;
     std::shared_ptr<MqttClient> mqtt;
@@ -26,4 +29,5 @@ class CredentialsReceiver {
     bool mqttInitialized = false;
     std::string ssid;
     std::string password;
+    std::string userKey;
 };

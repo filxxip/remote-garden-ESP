@@ -106,7 +106,7 @@ void MqttClient::unsubscribe(const std::string& topic) {
 bool MqttClient::publish(const std::string& topic, const std::string& message) {
     if (!topicPrefix.has_value()) {
         ESP_LOGE(TAG, "Cannot unsubscribe because topic prefix is not defined");
-        return;
+        return false;
     }
 
     const auto fullTopic = topicPrefix.value() + topic;

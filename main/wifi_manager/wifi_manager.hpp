@@ -16,6 +16,7 @@ class WifiManager {
     static void onGotIp(void* arg, esp_event_base_t base, int32_t id,
                         void* data);
     void registerOnConnected(std::function<void()> callback);
+    std::string getBssid() const;
 
    private:
     std::function<void()> onConnectedCallback;

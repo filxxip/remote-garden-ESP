@@ -3,10 +3,10 @@
 #include "utils/enum/enum_mapper.hpp"
 
 ActuatorClient::ActuatorClient(std::shared_ptr<MqttClient> mqttClient,
-                               const ActuatorType type, const int gardenId)
+                               const ActuatorType type)
     : type(type),
       mqtt(std::move(mqttClient)),
-      confirmationTopic("device/" + std::to_string(gardenId) + "/confirm") {}
+      confirmationTopic("device/confirm") {}
 
 void ActuatorClient::turnOn() { confirmOn(performTurnOn()); }
 

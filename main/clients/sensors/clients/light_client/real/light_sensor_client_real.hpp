@@ -5,7 +5,7 @@
 class LightSensorClientReal final : public AdcSensorClient {
    public:
     LightSensorClientReal(std::shared_ptr<MqttClient> mqttClient,
-                          const int gardenId, const adc_unit_t adcUnit,
+                          const adc_unit_t adcUnit,
                           const adc_channel_t adcChannel);
 
    protected:

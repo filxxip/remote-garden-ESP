@@ -4,7 +4,7 @@
 
 class SoilMoistureClientReal final : public AdcSensorClient {
    public:
-    SoilMoistureClientReal(std::shared_ptr<MqttClient> mqttClient, int gardenId,
+    SoilMoistureClientReal(std::shared_ptr<MqttClient> mqttClient,
                            const adc_unit_t adcUnit,
                            const adc_channel_t adcChannel);
 

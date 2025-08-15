@@ -4,8 +4,7 @@
 
 class AirHumidityClientMock final : public SensorClient {
    public:
-    AirHumidityClientMock(std::shared_ptr<MqttClient> mqttClient,
-                          const int gardenId);
+    AirHumidityClientMock(std::shared_ptr<MqttClient> mqttClient);
 
    protected:
     float readValue() override;

@@ -4,8 +4,7 @@
 
 class ThermometerClientMock final : public SensorClient {
    public:
-    ThermometerClientMock(std::shared_ptr<MqttClient> mqttClient,
-                          const int gardenId);
+    ThermometerClientMock(std::shared_ptr<MqttClient> mqttClient);
 
    protected:
     float readValue() override;

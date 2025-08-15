@@ -58,10 +58,9 @@ bool HttpManager::performRequest(esp_http_client_method_t method,
                                  const std::string& logTag) {
     std::string url = baseUrl + path_;
 
-    esp_http_client_config_t config = {
-        .url = url.c_str(),
-        .timeout_ms = 5000,
-    };
+    esp_http_client_config_t config = {};
+    config.url = url.c_str();
+    config.timeout_ms = 5000;
 
     esp_http_client_handle_t client = esp_http_client_init(&config);
     if (!client) {

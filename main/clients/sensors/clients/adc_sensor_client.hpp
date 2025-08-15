@@ -8,8 +8,8 @@
 class AdcSensorClient : public SensorClient {
    public:
     AdcSensorClient(std::shared_ptr<MqttClient> mqttClient,
-                    const SensorType type, const int gardenId,
-                    const adc_unit_t adcUnit, const adc_channel_t adcChannel);
+                    const SensorType type, const adc_unit_t adcUnit,
+                    const adc_channel_t adcChannel);
     ~AdcSensorClient() override;
 
    protected:

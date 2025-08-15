@@ -7,10 +7,10 @@ const char* TAG = "AdcSensorClient";
 }
 
 AdcSensorClient::AdcSensorClient(std::shared_ptr<MqttClient> mqttClient,
-                                 const SensorType type, const int gardenId,
+                                 const SensorType type,
                                  const adc_unit_t adcUnit,
                                  const adc_channel_t adcChannel)
-    : SensorClient(std::move(mqttClient), type, gardenId), channel(adcChannel) {
+    : SensorClient(std::move(mqttClient), type), channel(adcChannel) {
     adc_oneshot_unit_init_cfg_t init_config = {
         .unit_id = adcUnit,
         .clk_src = static_cast<adc_oneshot_clk_src_t>(0),

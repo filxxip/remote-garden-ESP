@@ -10,6 +10,12 @@
 namespace {
 constexpr const char* MQTT_URL = "mqtt://192.168.100.3:1883";
 constexpr const char* TAG = "CredentialsReceiver";
+
+struct ProvisioningTaskArgs {
+    CredentialsReceiver* self;
+    std::string ssid;
+};
+
 }  // namespace
 
 CredentialsReceiver::CredentialsReceiver(
@@ -55,15 +61,53 @@ void CredentialsReceiver::onCredentialsReceived(const std::string& ssid,
     wifi->disconnect();
     vTaskDelay(pdMS_TO_TICKS(600));
 
-    wifi->registerOnConnected([this] {
-        if (!DeviceProvisioner::ensureProvisioning()) {
-            ESP_LOGE(TAG, "Provisioning failed after Wi-Fi connected.");
-            return;
-        }
-        if (!mqttInitialized) {
-            mqtt->init(MQTT_URL);
-        }
-        mqtt->start();
+    wifi->registerOnConnected([this, ssid] {
+        ESP_LOGI(TAG,
+                 "WiFi connected, starting provisioning in separate task...");
+
+        xTaskCreate(
+            [](void* param) {
+                auto* args = static_cast<ProvisioningTaskArgs*>(param);
+                CredentialsReceiver* self = args->self;
+                const std::string ssid = args->ssid;
+                delete args;
+
+                ESP_LOGI(TAG, "Provisioning task started. Free heap: %zu bytes",
+                         esp_get_free_heap_size());
+
+                bool success = DeviceProvisioner::ensureProvisioning();
+
+                if (!success) {
+                    ESP_LOGE(TAG, "Provisioning failed after Wi-Fi connected.");
+                    vTaskDelete(NULL);
+                    return;
+                }
+
+                ESP_LOGI(TAG, "Provisioning successful, initializing MQTT...");
+
+                if (!self->mqttInitialized) {
+                    self->mqtt->init(MQTT_URL);
+                    self->mqttInitialized = true;
+                }
+                self->mqtt->start();
+
+                std::string payload = R"({"ssid":")" + ssid + R"("})";
+                self->mqtt->publish("conn", payload);
+                // TODO handle in backend and save in database as esp device
+                // param i wtedy jak zapisze to gdy ktos bedzie chciec dorzucic
+                // sobie jakies esp to mu wyswietli te z jego obecnej sieci i je
+                // moze dodac do ogrodka wiec najpierw connect a potem dopiero
+                // przeszukuje - najpiuerw podaje da esp dane sieci do jakiej ma
+                // sie laczyc a potem moze dowolnie sobie laczyc je z apka i
+                // garden, tylko ze statusem online pokaze albo jakis bool jaki
+                // status
+
+                ESP_LOGI(TAG, "Provisioning task completed successfully.");
+                vTaskDelete(NULL);
+            },
+            "provisioning_task", 12288, new ProvisioningTaskArgs{this, ssid}, 5,
+            NULL);
     });
+
     wifi->connect(ssid, password);
 }

@@ -23,29 +23,23 @@ const std::unordered_map<SensorType, UnitChan> adcConfig = {
 }  // namespace
 
 std::shared_ptr<SensorClient> MockSensorFactory::create(
-    const SensorType type, std::shared_ptr<MqttClient> mqtt,
-    const int gardenId) const {
+    const SensorType type, std::shared_ptr<MqttClient> mqtt) const {
     switch (type) {
         case SensorType::AirHumidity:
-            return std::make_shared<AirHumidityClientMock>(std::move(mqtt),
-                                                           gardenId);
+            return std::make_shared<AirHumidityClientMock>(std::move(mqtt));
         case SensorType::Light:
-            return std::make_shared<LightSensorClientMock>(std::move(mqtt),
-                                                           gardenId);
+            return std::make_shared<LightSensorClientMock>(std::move(mqtt));
         case SensorType::SoilMoisture:
-            return std::make_shared<SoilMoistureClientMock>(std::move(mqtt),
-                                                            gardenId);
+            return std::make_shared<SoilMoistureClientMock>(std::move(mqtt));
         case SensorType::AirTemperature:
-            return std::make_shared<ThermometerClientMock>(std::move(mqtt),
-                                                           gardenId);
+            return std::make_shared<ThermometerClientMock>(std::move(mqtt));
         default:
             return nullptr;
     }
 }
 
 std::shared_ptr<SensorClient> AdcSensorFactory::create(
-    const SensorType type, std::shared_ptr<MqttClient> mqtt,
-    const int gardenId) const {
+    const SensorType type, std::shared_ptr<MqttClient> mqtt) const {
     auto it = adcConfig.find(type);
     if (it == adcConfig.end()) return nullptr;
 
@@ -53,17 +47,17 @@ std::shared_ptr<SensorClient> AdcSensorFactory::create(
 
     switch (type) {
         case SensorType::AirHumidity:
-            return std::make_shared<AirHumidityClientReal>(
-                std::move(mqtt), gardenId, unit, channel);
+            return std::make_shared<AirHumidityClientReal>(std::move(mqtt),
+                                                           unit, channel);
         case SensorType::Light:
-            return std::make_shared<LightSensorClientReal>(
-                std::move(mqtt), gardenId, unit, channel);
+            return std::make_shared<LightSensorClientReal>(std::move(mqtt),
+                                                           unit, channel);
         case SensorType::SoilMoisture:
-            return std::make_shared<SoilMoistureClientReal>(
-                std::move(mqtt), gardenId, unit, channel);
+            return std::make_shared<SoilMoistureClientReal>(std::move(mqtt),
+                                                            unit, channel);
         case SensorType::AirTemperature:
-            return std::make_shared<ThermometerClientReal>(
-                std::move(mqtt), gardenId, unit, channel);
+            return std::make_shared<ThermometerClientReal>(std::move(mqtt),
+                                                           unit, channel);
         default:
             return nullptr;
     }

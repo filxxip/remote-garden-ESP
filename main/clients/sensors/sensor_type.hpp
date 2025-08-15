@@ -5,4 +5,5 @@ enum class SensorType {
     AirHumidity,
     SoilMoisture,
     AirTemperature,
+    Battery
 };

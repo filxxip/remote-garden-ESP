@@ -9,8 +9,7 @@
 
 class SensorClient {
    public:
-    SensorClient(std::shared_ptr<MqttClient> mqttClient, const SensorType type,
-                 const int gardenId);
+    SensorClient(std::shared_ptr<MqttClient> mqttClient, const SensorType type);
     virtual ~SensorClient() = default;
 
     void storeReading();

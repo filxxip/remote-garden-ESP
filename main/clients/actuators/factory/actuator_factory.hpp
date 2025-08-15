@@ -9,20 +9,19 @@
 class ActuatorFactory {
    public:
     virtual std::unique_ptr<ActuatorClient> create(
-        const ActuatorType type, std::shared_ptr<MqttClient> mqtt,
-        int gardenId) const = 0;
+        const ActuatorType type, std::shared_ptr<MqttClient> mqtt) const = 0;
 };
 
 class GpioActuatorFactory final : public ActuatorFactory {
    public:
-    std::unique_ptr<ActuatorClient> create(const ActuatorType type,
-                                           std::shared_ptr<MqttClient> mqtt,
-                                           int gardenId) const override;
+    std::unique_ptr<ActuatorClient> create(
+        const ActuatorType type,
+        std::shared_ptr<MqttClient> mqtt) const override;
 };
 
 class MockActuatorFactory final : public ActuatorFactory {
    public:
-    std::unique_ptr<ActuatorClient> create(const ActuatorType type,
-                                           std::shared_ptr<MqttClient> mqtt,
-                                           int gardenId) const override;
+    std::unique_ptr<ActuatorClient> create(
+        const ActuatorType type,
+        std::shared_ptr<MqttClient> mqtt) const override;
 };

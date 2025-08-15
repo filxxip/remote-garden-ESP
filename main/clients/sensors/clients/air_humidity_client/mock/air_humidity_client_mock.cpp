@@ -3,7 +3,7 @@
 #include "clients/sensors/clients/adc_sensor_client.hpp"
 
 AirHumidityClientMock::AirHumidityClientMock(
-    std::shared_ptr<MqttClient> mqttClient, const int gardenId)
-    : SensorClient(std::move(mqttClient), SensorType::AirHumidity, gardenId) {}
+    std::shared_ptr<MqttClient> mqttClient)
+    : SensorClient(std::move(mqttClient), SensorType::AirHumidity) {}
 
 float AirHumidityClientMock::readValue() { return 55.5f; }

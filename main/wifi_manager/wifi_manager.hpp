@@ -12,7 +12,7 @@ class WifiManager {
     bool connect(const std::string& ssid, const std::string& password,
                  const int max_retries = 10);
     void disconnect();
-    bool isConnected() const;
+    float getRssi() const;
     static void onGotIp(void* arg, esp_event_base_t base, int32_t id,
                         void* data);
     void registerOnConnected(std::function<void()> callback);

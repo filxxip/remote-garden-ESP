@@ -7,8 +7,7 @@
 class GpioActuatorClient final : public ActuatorClient {
    public:
     GpioActuatorClient(std::shared_ptr<MqttClient> mqttClient,
-                       const ActuatorType type, const int gardenId,
-                       gpio_num_t gpioNum);
+                       const ActuatorType type, gpio_num_t gpioNum);
 
    protected:
     bool performTurnOn() override;

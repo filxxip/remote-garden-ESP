@@ -38,6 +38,14 @@ void MqttClient::init(const char* brokerUri) {
     mqtt_cfg.broker.verification.certificate_len = 0;
     mqtt_cfg.broker.verification.skip_cert_common_name_check = false;
 
+    topicPrefix = deviceId + "/";
+    auto fullTopic = topicPrefix.value() + "status";
+
+    mqtt_cfg.session.last_will.topic = fullTopic.c_str();
+    mqtt_cfg.session.last_will.msg = R"({"online":false})";
+    mqtt_cfg.session.last_will.qos = 1;
+    mqtt_cfg.session.last_will.retain = true;
+
     client = esp_mqtt_client_init(&mqtt_cfg);
     if (!client) {
         ESP_LOGE(TAG, "Failed to initialize MQTT client");
@@ -52,45 +60,67 @@ void MqttClient::init(const char* brokerUri) {
 void MqttClient::subscribe(const std::string& topic,
                            std::shared_ptr<MqttEventHandler> handler) {
     std::lock_guard<std::mutex> lock(handlersMutex);
-    handlers[topic] = handler;
 
-    auto msg_id = esp_mqtt_client_subscribe(client, topic.c_str(), 1);
+    if (!topicPrefix.has_value()) {
+        ESP_LOGE(TAG, "Cannot subscribe because topic prefix is not defined");
+        return;
+    }
+
+    const auto fullTopic = topicPrefix.value() + topic;
+    handlers[fullTopic] = handler;
+
+    auto msg_id = esp_mqtt_client_subscribe(client, fullTopic.c_str(), 1);
     if (msg_id >= 0) {
         ESP_LOGI(TAG, "Successfully subscribed to topic: %s (msg_id=%d)",
-                 topic.c_str(), msg_id);
+                 fullTopic.c_str(), msg_id);
     } else {
         ESP_LOGE(TAG, "Failed to subscribe to topic: %s (err=%d)",
-                 topic.c_str(), msg_id);
+                 fullTopic.c_str(), msg_id);
     }
 }
 
 void MqttClient::unsubscribe(const std::string& topic) {
     std::lock_guard<std::mutex> lock(handlersMutex);
-    handlers.erase(topic);
+
+    if (!topicPrefix.has_value()) {
+        ESP_LOGE(TAG, "Cannot unsubscribe because topic prefix is not defined");
+        return;
+    }
+
+    const auto fullTopic = topicPrefix.value() + topic;
+
+    handlers.erase(fullTopic);
 
     if (client) {
-        int msg_id = esp_mqtt_client_unsubscribe(client, topic.c_str());
+        int msg_id = esp_mqtt_client_unsubscribe(client, fullTopic.c_str());
         if (msg_id >= 0) {
             ESP_LOGI(TAG, "Unsubscribed from topic: %s (msg_id=%d)",
-                     topic.c_str(), msg_id);
+                     fullTopic.c_str(), msg_id);
         } else {
             ESP_LOGE(TAG, "Failed to unsubscribe from topic: %s (err=%d)",
-                     topic.c_str(), msg_id);
+                     fullTopic.c_str(), msg_id);
         }
     }
 }
 
 bool MqttClient::publish(const std::string& topic, const std::string& message) {
+    if (!topicPrefix.has_value()) {
+        ESP_LOGE(TAG, "Cannot unsubscribe because topic prefix is not defined");
+        return;
+    }
+
+    const auto fullTopic = topicPrefix.value() + topic;
+
     if (client) {
-        int msg_id = esp_mqtt_client_publish(client, topic.c_str(),
+        int msg_id = esp_mqtt_client_publish(client, fullTopic.c_str(),
                                              message.c_str(), 0, 1, 0);
         if (msg_id >= 0) {
             ESP_LOGI(TAG, "Published message id %d to topic %s", msg_id,
-                     topic.c_str());
+                     fullTopic.c_str());
             return true;
         } else {
             ESP_LOGW(TAG, "Failed to publish message to topic %s",
-                     topic.c_str());
+                     fullTopic.c_str());
         }
     } else {
         ESP_LOGW(TAG, "MQTT client not initialized");
@@ -145,6 +175,7 @@ void MqttClient::mqtt_event_handler(void* handler_args, esp_event_base_t base,
         }
         case MQTT_EVENT_CONNECTED:
             ESP_LOGI(TAG, "MQTT connected");
+            self->publish("status", R"({"online":true})");
             if (self->onConnectedCallback) {
                 self->onConnectedCallback(*self);
             }

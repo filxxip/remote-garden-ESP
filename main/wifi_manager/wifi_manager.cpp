@@ -87,6 +87,15 @@ void WifiManager::disconnect() {
     }
 }
 
+float WifiManager::getRssi() const {
+    wifi_ap_record_t ap_info;
+    if (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) {
+        return static_cast<float>(ap_info.rssi);
+    } else {
+        return -100.0f;
+    }
+}
+
 void WifiManager::registerOnConnected(std::function<void()> callback) {
     onConnectedCallback = std::move(callback);
 }

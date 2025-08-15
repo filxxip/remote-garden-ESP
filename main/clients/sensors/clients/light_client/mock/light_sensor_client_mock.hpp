@@ -4,8 +4,7 @@
 
 class LightSensorClientMock final : public SensorClient {
    public:
-    LightSensorClientMock(std::shared_ptr<MqttClient> mqttClient,
-                          const int gardenId);
+    LightSensorClientMock(std::shared_ptr<MqttClient> mqttClient);
 
    protected:
     float readValue() override;

@@ -36,51 +36,35 @@ extern "C" void app_main(void) {
     wifi->init();
 
     auto mqtt = std::make_shared<MqttClient>();
-    auto gardenHandler = std::make_shared<GardenSpecifierHandler>();
 
     auto actuatorFactory = std::make_unique<MockActuatorFactory>();
     auto sensorFactory = std::make_unique<MockSensorFactory>();
 
     std::array<std::unique_ptr<SensorPollingManager>, 2> sensorManagers;
 
-    gardenHandler->setCallback([&](const auto& prev, auto updated) {
-        ESP_LOGI(TAG, "Garden callback triggered");
-
-        if (prev.has_value()) {
-            ESP_LOGI(TAG, "Unsubscribing from previous garden ID: %d",
-                     prev.value());
-            mqtt->unsubscribe("device/" + std::to_string(prev.value()) +
-                              "/control");
-        }
-
-        auto atomize =
-            actuatorFactory->create(ActuatorType::Atomize, mqtt, updated);
-        auto fan = actuatorFactory->create(ActuatorType::Fan, mqtt, updated);
-        auto heating =
-            actuatorFactory->create(ActuatorType::HeatingMat, mqtt, updated);
-        auto water =
-            actuatorFactory->create(ActuatorType::Water, mqtt, updated);
+    mqtt->registerOnConnected([mqtt](MqttClient& client) {
+        auto atomize = actuatorFactory->create(ActuatorType::Atomize, mqtt);
+        auto fan = actuatorFactory->create(ActuatorType::Fan, mqtt);
+        auto heating = actuatorFactory->create(ActuatorType::HeatingMat, mqtt);
+        auto water = actuatorFactory->create(ActuatorType::Water, mqtt);
 
         auto deviceHandler = std::make_shared<DeviceControlHandler>(
             std::move(atomize), std::move(fan), std::move(heating),
             std::move(water));
 
-        mqtt->subscribe("device/" + std::to_string(updated) + "/control",
-                        std::move(deviceHandler));
+        mqtt->subscribe("device/control", std::move(deviceHandler));
 
         std::vector<std::shared_ptr<SensorClient>> sensors = {
-            sensorFactory->create(SensorType::Light, mqtt, updated),
-            sensorFactory->create(SensorType::AirHumidity, mqtt, updated),
-            sensorFactory->create(SensorType::SoilMoisture, mqtt, updated),
-            sensorFactory->create(SensorType::AirTemperature, mqtt, updated),
+            sensorFactory->create(SensorType::Light, mqtt),
+            sensorFactory->create(SensorType::AirHumidity, mqtt),
+            sensorFactory->create(SensorType::SoilMoisture, mqtt),
+            sensorFactory->create(SensorType::AirTemperature, mqtt),
         };
 
         sensorManagers = {std::make_unique<SensorReader>(sensors, 3000),
                           std::make_unique<SensorPublisher>(sensors, 20000)};
-    });
-
-    mqtt->registerOnConnected([gardenHandler](MqttClient& client) {
-        client.subscribe("garden", std::move(gardenHandler));
+        // sprawdzic co jak dwa rady sie connect na mqtt zrobi np po kolejny
+        // bluetoth sieci
     });
 
     CredentialsReceiver credentialReceiver{std::make_unique<BluetoothManager>(),

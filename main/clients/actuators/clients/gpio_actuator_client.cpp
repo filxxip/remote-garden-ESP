@@ -8,8 +8,8 @@ constexpr const char* TAG = "GpioActuatorClient";
 
 GpioActuatorClient::GpioActuatorClient(std::shared_ptr<MqttClient> mqttClient,
                                        const ActuatorType type,
-                                       const int gardenId, gpio_num_t gpioNum)
-    : ActuatorClient(std::move(mqttClient), type, gardenId), gpio(gpioNum) {
+                                       gpio_num_t gpioNum)
+    : ActuatorClient(std::move(mqttClient), type), gpio(gpioNum) {
     gpio_config_t io_conf = {};
     io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_OUTPUT;

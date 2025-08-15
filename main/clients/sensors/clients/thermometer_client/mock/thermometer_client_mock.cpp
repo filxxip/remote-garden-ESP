@@ -3,8 +3,7 @@
 #include "clients/sensors/sensor_type.hpp"
 
 ThermometerClientMock::ThermometerClientMock(
-    std::shared_ptr<MqttClient> mqttClient, const int gardenId)
-    : SensorClient(std::move(mqttClient), SensorType::AirTemperature,
-                   gardenId) {}
+    std::shared_ptr<MqttClient> mqttClient)
+    : SensorClient(std::move(mqttClient), SensorType::AirTemperature) {}
 
 float ThermometerClientMock::readValue() { return 22.7f; }

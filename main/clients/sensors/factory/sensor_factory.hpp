@@ -10,20 +10,17 @@
 class SensorFactory {
    public:
     virtual std::shared_ptr<SensorClient> create(
-        const SensorType type, std::shared_ptr<MqttClient> mqtt,
-        const int gardenId) const = 0;
+        const SensorType type, std::shared_ptr<MqttClient> mqtt) const = 0;
 };
 
 class MockSensorFactory final : public SensorFactory {
    public:
-    std::shared_ptr<SensorClient> create(const SensorType type,
-                                         std::shared_ptr<MqttClient> mqtt,
-                                         const int gardenId) const override;
+    std::shared_ptr<SensorClient> create(
+        const SensorType type, std::shared_ptr<MqttClient> mqtt) const override;
 };
 
 class AdcSensorFactory final : public SensorFactory {
    public:
-    std::shared_ptr<SensorClient> create(const SensorType type,
-                                         std::shared_ptr<MqttClient> mqtt,
-                                         const int gardenId) const override;
+    std::shared_ptr<SensorClient> create(
+        const SensorType type, std::shared_ptr<MqttClient> mqtt) const override;
 };

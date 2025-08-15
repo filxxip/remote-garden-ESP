@@ -8,7 +8,7 @@
 class ActuatorClient {
    public:
     ActuatorClient(std::shared_ptr<MqttClient> mqttClient,
-                   const ActuatorType type, const int gardenId);
+                   const ActuatorType type);
 
     virtual ~ActuatorClient() = default;
 

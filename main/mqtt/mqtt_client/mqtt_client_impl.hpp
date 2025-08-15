@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -29,6 +30,7 @@ class MqttClient {
     std::unordered_map<std::string, std::shared_ptr<MqttEventHandler>> handlers;
     std::mutex handlersMutex;
     std::function<void(MqttClient&)> onConnectedCallback;
+    std::optional<std::string> topicPrefix;
 
     static void mqtt_event_handler(void* handler_args, esp_event_base_t base,
                                    int32_t event_id, void* event_data);

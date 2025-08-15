@@ -3,7 +3,7 @@
 #include "clients/sensors/sensor_type.hpp"
 
 LightSensorClientMock::LightSensorClientMock(
-    std::shared_ptr<MqttClient> mqttClient, const int gardenId)
-    : SensorClient(std::move(mqttClient), SensorType::Light, gardenId) {}
+    std::shared_ptr<MqttClient> mqttClient)
+    : SensorClient(std::move(mqttClient), SensorType::Light) {}
 
 float LightSensorClientMock::readValue() { return 300.0f; }

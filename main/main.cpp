@@ -32,6 +32,13 @@ extern "C" void app_main(void) {
         return;
     }
 
+    // @TODO remove scope
+    if (DeviceProvisioner::removeProvisioned()) {
+        ESP_LOGI(TAG, "Provisioned files removed successfully");
+    } else {
+        ESP_LOGW(TAG, "Some provisioned files could not be removed");
+    }
+
     auto wifi = std::make_shared<WifiManager>();
     wifi->init();
 

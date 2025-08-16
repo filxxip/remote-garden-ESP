@@ -17,8 +17,11 @@ class WifiManager {
                         void* data);
     void registerOnConnected(std::function<void()> callback);
     std::string getBssid() const;
+    static void onDisconnected(void* arg, esp_event_base_t base, int32_t id,
+                               void* data);
 
    private:
     std::function<void()> onConnectedCallback;
     bool apReceived = false;
+    bool pendingNewCredentials = false;
 };

@@ -5,15 +5,17 @@ from bleak import BleakClient, BleakScanner
 
 SSID_UUID = "0000ff01-0000-1000-8000-00805f9b34fb"
 PASS_UUID = "0000ff02-0000-1000-8000-00805f9b34fb"
+USER_KEY_UUID = "0000ff03-0000-1000-8000-00805f9b34fb" 
 
 load_dotenv()
 
 async def main():
     ssid_value = os.getenv("SSID")
     pass_value = os.getenv("PASSWORD")
+    user_key_value = os.getenv("USER_KEY")
 
-    if not ssid_value or not pass_value:
-        print("ERROR: SSID or PASSWORD not set in .env file.")
+    if not ssid_value or not pass_value or not user_key_value:
+        print("ERROR: SSID, PASSWORD or USER_KEY not set in .env file.")
         return
 
     print("Scanning for BLE devices...")
@@ -38,6 +40,10 @@ async def main():
 
         print("Sending Password...")
         await client.write_gatt_char(PASS_UUID, pass_value.encode("utf-8"))
+        await asyncio.sleep(1.0)
+
+        print("Sending User Key...")
+        await client.write_gatt_char(USER_KEY_UUID, user_key_value.encode("utf-8"))
         await asyncio.sleep(1.0)
 
         print("Done. Disconnecting.")

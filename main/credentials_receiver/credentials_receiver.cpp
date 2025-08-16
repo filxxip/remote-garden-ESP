@@ -126,6 +126,7 @@ void CredentialsReceiver::onCredentialsReceived(const std::string& ssid,
 
 void CredentialsReceiver::handleBleWrite(std::string& target,
                                          const uint8_t* data, uint16_t len) {
+    ESP_LOGI(TAG, "Received data from BLE");
     target.assign(reinterpret_cast<const char*>(data), len);
 
     if (!ssid.empty() && !password.empty() && !userKey.empty()) {

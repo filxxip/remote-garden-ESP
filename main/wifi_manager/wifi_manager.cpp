@@ -12,11 +12,6 @@
 
 namespace {
 constexpr const char* TAG = "WifiManager";
-
-bool check_connection() {
-    wifi_ap_record_t ap_info;
-    return esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK;
-}
 }  // namespace
 
 void WifiManager::init() {
@@ -29,46 +24,34 @@ void WifiManager::init() {
 
     ESP_ERROR_CHECK(esp_event_handler_instance_register(
         IP_EVENT, IP_EVENT_STA_GOT_IP, &WifiManager::onGotIp, this, nullptr));
-}
-
-bool WifiManager::connect(const std::string& ssid, const std::string& password,
-                          const int max_retries) {
-    wifi_config_t wifi_config = {};
-    std::strncpy((char*)wifi_config.sta.ssid, ssid.c_str(),
-                 sizeof(wifi_config.sta.ssid) - 1);
-    std::strncpy((char*)wifi_config.sta.password, password.c_str(),
-                 sizeof(wifi_config.sta.password) - 1);
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(
+        WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &WifiManager::onDisconnected,
+        this, nullptr));
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
-    vTaskDelay(pdMS_TO_TICKS(100));
+}
 
-    esp_err_t err = esp_wifi_connect();
+bool WifiManager::connect(const std::string& ssid, const std::string& pass,
+                          int retries) {
+    ESP_LOGI(TAG, "Try to connect to wifi with ssid: %s pass: %s", ssid.c_str(),
+             pass.c_str());
+    pendingNewCredentials = true;
+
+    wifi_config_t wifi_config{};
+    strncpy((char*)wifi_config.sta.ssid, ssid.c_str(),
+            sizeof(wifi_config.sta.ssid));
+    strncpy((char*)wifi_config.sta.password, pass.c_str(),
+            sizeof(wifi_config.sta.password));
+
+    esp_err_t err = esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "esp_wifi_connect() failed: %s", esp_err_to_name(err));
+        ESP_LOGE(TAG, "esp_wifi_set_config failed: %s", esp_err_to_name(err));
         return false;
     }
 
-    ESP_LOGI(TAG, "Connecting to SSID: %s", ssid.c_str());
-
-    for (int retry = 1; retry <= max_retries; ++retry) {
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        if (check_connection()) {
-            ESP_LOGI(TAG, "Connected to WiFi");
-            return true;
-        }
-        ESP_LOGW(TAG, "Retry %d/%d...", retry, max_retries);
-
-        if ((err = esp_wifi_connect()) != ESP_OK) {
-            ESP_LOGE(TAG, "esp_wifi_connect() failed on retry: %s",
-                     esp_err_to_name(err));
-            break;
-        }
-    }
-
-    ESP_LOGE(TAG, "Failed to connect to WiFi after %d retries", max_retries);
-    return false;
+    pendingNewCredentials = false;
+    return esp_wifi_connect() == ESP_OK;
 }
 
 void WifiManager::disconnect() {
@@ -123,5 +106,18 @@ std::string WifiManager::getBssid() const {
     } else {
         ESP_LOGW(TAG, "BSSID not available (not connected?)");
         return {};
+    }
+}
+
+void WifiManager::onDisconnected(void* arg, esp_event_base_t base, int32_t id,
+                                 void* data) {
+    auto* self = static_cast<WifiManager*>(arg);
+    ESP_LOGW(TAG, "Disconnected from Wi-Fi");
+
+    if (!self->pendingNewCredentials) {
+        ESP_LOGI(TAG, "Retrying Wi-Fi connect...");
+        esp_wifi_connect();
+    } else {
+        ESP_LOGI(TAG, "Waiting for new credentials, not retrying");
     }
 }

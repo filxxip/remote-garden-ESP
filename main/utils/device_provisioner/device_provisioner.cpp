@@ -15,11 +15,18 @@ constexpr const char* CLIENT_CERT_PATH = "/spiffs/client.crt";
 constexpr const char* CA_CERT_PATH = "/spiffs/ca.crt";
 constexpr const char* USER_KEY_PATH = "/spiffs/user.txt";
 
+constexpr const char* SERVER_URL = "http://192.168.100.3:3000";
+constexpr const char* PATH = "/api/esp/register";
+
 bool readFile(const char* path, std::string& out) {
     return FileManager::readFromFile(path, out);
 }
 
 bool saveKeyAndCert(const std::string& key, const std::string& cert) {
+    ESP_LOGI(TAG, "Try to save content %s to file %s", key.c_str(),
+             CLIENT_KEY_PATH);
+    ESP_LOGI(TAG, "Try to save content %s to file %s", cert.c_str(),
+             CLIENT_CERT_PATH);
     return FileManager::writeToFile(CLIENT_KEY_PATH, key) &&
            FileManager::writeToFile(CLIENT_CERT_PATH, cert);
 }
@@ -28,8 +35,8 @@ bool sendCsrAndGetCert(const std::string& deviceId,
                        const std::string& deviceSecret,
                        const std::string& userKey, const std::string& csrPem,
                        std::string& certOut) {
-    return HttpManager("https://your.server.url")
-        .path("/register")
+    return HttpManager(SERVER_URL)
+        .path(PATH)
         .contentType("application/x-pem-file")
         .header("X-Device-ID", deviceId)
         .header("X-Device-Secret", deviceSecret)

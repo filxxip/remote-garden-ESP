@@ -20,8 +20,7 @@ class CredentialsReceiver {
                                        const std::string& userKey);
 
    private:
-    void CredentialsReceiver::handleBleWrite(std::string& target,
-                                             const uint8_t* data, uint16_t len);
+    void handleBleWrite(std::string& target, const uint8_t* data, uint16_t len);
     std::unique_ptr<BluetoothManager> ble;
     std::shared_ptr<WifiManager> wifi;
     std::shared_ptr<MqttClient> mqtt;

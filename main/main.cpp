@@ -58,10 +58,12 @@ extern "C" void app_main(void) {
         mqtt->subscribe("reset", std::move(resetHandler));
 
         std::vector<std::shared_ptr<SensorClient>> sensors = {
-            sensorFactory.create(SensorType::Light, mqtt),
-            sensorFactory.create(SensorType::AirHumidity, mqtt),
-            sensorFactory.create(SensorType::SoilMoisture, mqtt),
-            sensorFactory.create(SensorType::AirTemperature, mqtt),
+            sensorFactory.create(SensorType::Light, mqtt, wifi),
+            sensorFactory.create(SensorType::AirHumidity, mqtt, wifi),
+            sensorFactory.create(SensorType::SoilMoisture, mqtt, wifi),
+            sensorFactory.create(SensorType::AirTemperature, mqtt, wifi),
+            sensorFactory.create(SensorType::Battery, mqtt, wifi),
+            sensorFactory.create(SensorType::SignalStrength, mqtt, wifi),
         };
 
         sensorManagers = {std::make_unique<SensorReader>(sensors, 3000),

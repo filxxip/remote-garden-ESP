@@ -9,7 +9,7 @@ constexpr const char* TAG = "SignalStrengthClientReal";
 }
 
 SignalStrengthClientReal::SignalStrengthClientReal(
-    std::shared_ptr<MqttClient> mqttClient, std::shared_ptr<WifiManager> wifi, )
+    std::shared_ptr<MqttClient> mqttClient, std::shared_ptr<WifiManager> wifi)
     : SensorClient(std::move(mqttClient), SensorType::SignalStrength),
       wifi(std::move(wifi)) {}
 

@@ -10,7 +10,7 @@ constexpr const char* TAG = "ResetHandler";
 }
 
 ResetHandler::ResetHandler(std::shared_ptr<WifiManager> wifi,
-                           std::shared_ptr<WifiManager> mqtt)
+                           std::shared_ptr<MqttClient> mqtt)
     : wifi(std::move(wifi)), mqtt(std::move(mqtt)) {}
 
 void ResetHandler::operate(const std::string& topic,

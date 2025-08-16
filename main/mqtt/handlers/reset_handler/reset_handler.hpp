@@ -1,6 +1,10 @@
 #pragma once
 
+#include <memory>
+
+#include "mqtt/mqtt_client/mqtt_client_impl.hpp"
 #include "mqtt/mqtt_event_handler.hpp"
+#include "wifi_manager/wifi_manager.hpp"
 
 class ResetHandler : public MqttEventHandler {
    public:

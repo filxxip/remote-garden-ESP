@@ -4,8 +4,12 @@
 
 #include "clients/sensors/clients/air_humidity_client/mock/air_humidity_client_mock.hpp"
 #include "clients/sensors/clients/air_humidity_client/real/air_humidity_client_real.hpp"
+#include "clients/sensors/clients/battery_client/mock/battery_sensor_client_mock.hpp"
+#include "clients/sensors/clients/battery_client/real/battery_sensor_client_real.hpp"
 #include "clients/sensors/clients/light_client/mock/light_sensor_client_mock.hpp"
 #include "clients/sensors/clients/light_client/real/light_sensor_client_real.hpp"
+#include "clients/sensors/clients/signal_strength_client/mock/signal_strength_client_mock.hpp"
+#include "clients/sensors/clients/signal_strength_client/real/signal_strength_client_real.hpp"
 #include "clients/sensors/clients/soil_moisture_client/mock/soil_moisture_client_mock.hpp"
 #include "clients/sensors/clients/soil_moisture_client/real/soil_moisture_client_real.hpp"
 #include "clients/sensors/clients/thermometer_client/mock/thermometer_client_mock.hpp"
@@ -23,7 +27,8 @@ const std::unordered_map<SensorType, UnitChan> adcConfig = {
 }  // namespace
 
 std::shared_ptr<SensorClient> MockSensorFactory::create(
-    const SensorType type, std::shared_ptr<MqttClient> mqtt) const {
+    const SensorType type, std::shared_ptr<MqttClient> mqtt,
+    std::shared_ptr<WifiManager> wifi) const {
     switch (type) {
         case SensorType::AirHumidity:
             return std::make_shared<AirHumidityClientMock>(std::move(mqtt));
@@ -33,13 +38,18 @@ std::shared_ptr<SensorClient> MockSensorFactory::create(
             return std::make_shared<SoilMoistureClientMock>(std::move(mqtt));
         case SensorType::AirTemperature:
             return std::make_shared<ThermometerClientMock>(std::move(mqtt));
+        case SensorType::Battery:
+            return std::make_shared<BatterySensorClientMock>(std::move(mqtt));
+        case SensorType::SignalStrength:
+            return std::make_shared<SignalStrengthClientMock>(std::move(mqtt));
         default:
             return nullptr;
     }
 }
 
 std::shared_ptr<SensorClient> AdcSensorFactory::create(
-    const SensorType type, std::shared_ptr<MqttClient> mqtt) const {
+    const SensorType type, std::shared_ptr<MqttClient> mqtt,
+    std::shared_ptr<WifiManager> wifi) const {
     auto it = adcConfig.find(type);
     if (it == adcConfig.end()) return nullptr;
 
@@ -58,6 +68,12 @@ std::shared_ptr<SensorClient> AdcSensorFactory::create(
         case SensorType::AirTemperature:
             return std::make_shared<ThermometerClientReal>(std::move(mqtt),
                                                            unit, channel);
+        case SensorType::Battery:
+            return std::make_shared<BatterySensorClientReal>(std::move(mqtt),
+                                                             unit, channel);
+        case SensorType::SignalStrength:
+            return std::make_shared<SignalStrengthClientReal>(std::move(mqtt),
+                                                              std::move(wifi));
         default:
             return nullptr;
     }

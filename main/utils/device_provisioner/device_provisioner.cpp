@@ -19,7 +19,9 @@ constexpr const char* SERVER_URL = "http://192.168.100.3:3000";
 constexpr const char* PATH = "/api/esp/register";
 
 bool readFile(const char* path, std::string& out) {
-    return FileManager::readFromFile(path, out);
+    auto result = FileManager::readFromFile(path, out);
+    ESP_LOGI(TAG, "Read '%s' from %s", out.c_str(), path);
+    return result;
 }
 
 bool saveKeyAndCert(const std::string& key, const std::string& cert) {

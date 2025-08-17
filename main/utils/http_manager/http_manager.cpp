@@ -84,19 +84,26 @@ bool HttpManager::performRequest(esp_http_client_method_t method,
         return false;
     }
 
-    int content_length = esp_http_client_get_content_length(client);
-    char* buffer = (char*)malloc(content_length + 1);
-    if (!buffer) {
-        ESP_LOGE(logTag.c_str(), "Failed to allocate buffer");
-        esp_http_client_cleanup(client);
-        return false;
+    int status = esp_http_client_get_status_code(client);
+    ESP_LOGI(logTag.c_str(), "HTTP status %d", status);
+
+    std::string response;
+    char buffer[256];
+    while (true) {
+        int read_len = esp_http_client_read(client, buffer, sizeof(buffer) - 1);
+        if (read_len <= 0) break;
+        buffer[read_len] = '\0';
+        response.append(buffer, read_len);
     }
 
-    int read_len = esp_http_client_read(client, buffer, content_length);
-    buffer[read_len] = '\0';
-    responseOut.assign(buffer, read_len);
-    free(buffer);
+    if (response.empty()) {
+        ESP_LOGW(logTag.c_str(), "No response body received");
+    } else {
+        ESP_LOGI(logTag.c_str(), "Received %d bytes", (int)response.size());
+    }
+
+    responseOut = response;
 
     esp_http_client_cleanup(client);
-    return true;
+    return (status >= 200 && status < 300);
 }

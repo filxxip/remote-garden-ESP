@@ -24,7 +24,7 @@ void MqttClient::init(const char* brokerUri) {
         return;
     }
 
-    auto [clientKey, clientCert, caCert, deviceId] =
+    std::tie(clientKey, clientCert, caCert, deviceId) =
         DeviceProvisioner::loadTlsCredentials();
 
     esp_mqtt_client_config_t mqtt_cfg = {};
@@ -182,6 +182,10 @@ void MqttClient::mqtt_event_handler(void* handler_args, esp_event_base_t base,
             break;
         case MQTT_EVENT_DISCONNECTED:
             ESP_LOGI(TAG, "MQTT disconnected");
+            break;
+        case MQTT_EVENT_PUBLISHED:
+            ESP_LOGI(TAG, "Message with msg_id=%d delivered to broker",
+                     event->msg_id);
             break;
         default:
             break;

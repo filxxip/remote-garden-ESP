@@ -37,12 +37,13 @@ void SensorClient::flushCache() {
                    "\",\"values\":[" + values + "]}";
 
     if (mqtt->publish(topic, payload)) {
-        ESP_LOGI(TAG, "Published %zu cached readings for '%s'", cache.size(),
-                 enumToString(sensorType).c_str());
+        ESP_LOGI(TAG, "Added %zu cached readings for '%s' to the message queue",
+                 cache.size(), enumToString(sensorType).c_str());
         cache.clear();
     } else {
-        ESP_LOGW(TAG,
-                 "Failed to publish cached readings for '%s', keeping them",
-                 enumToString(sensorType).c_str());
+        ESP_LOGW(
+            TAG,
+            "Failed to add cached readings for '%s' to queue, keeping them",
+            enumToString(sensorType).c_str());
     }
 }

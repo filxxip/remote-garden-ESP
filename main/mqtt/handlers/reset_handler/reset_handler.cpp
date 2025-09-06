@@ -4,6 +4,7 @@
 
 #include "utils/device_provisioner/device_provisioner.hpp"
 #include "utils/file_manager/file_manager.hpp"
+#include "utils/nvs_manager/nvs_credentials_manager.hpp"
 
 namespace {
 constexpr const char* TAG = "ResetHandler";
@@ -21,6 +22,12 @@ void ResetHandler::operate(const std::string& topic,
         ESP_LOGI(TAG, "Provisioning data removed successfully");
     } else {
         ESP_LOGW(TAG, "Failed to remove some provisioning files");
+    }
+
+    if (NvsCredentialsManager::clear()) {
+        ESP_LOGI(TAG, "Wifi data removed successfully");
+    } else {
+        ESP_LOGW(TAG, "Failed to remove wifi files");
     }
 
     mqtt->stop();

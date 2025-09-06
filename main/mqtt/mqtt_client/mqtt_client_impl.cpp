@@ -133,6 +133,11 @@ void MqttClient::registerOnConnected(
     onConnectedCallback = std::move(callback);
 }
 
+void MqttClient::registerOnDisconnected(
+    std::function<void(MqttClient&)> callback) {
+    onDisconnectedCallback = std::move(callback);
+}
+
 void MqttClient::start() {
     if (!client) {
         ESP_LOGE(TAG, "MQTT client not initialized. Call init() first.");
@@ -182,6 +187,9 @@ void MqttClient::mqtt_event_handler(void* handler_args, esp_event_base_t base,
             break;
         case MQTT_EVENT_DISCONNECTED:
             ESP_LOGI(TAG, "MQTT disconnected");
+            if (self->onDisconnectedCallback) {
+                self->onDisconnectedCallback(*self);
+            }
             break;
         case MQTT_EVENT_PUBLISHED:
             ESP_LOGI(TAG, "Message with msg_id=%d delivered to broker",

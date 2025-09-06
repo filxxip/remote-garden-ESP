@@ -21,6 +21,7 @@ class MqttClient {
     void unsubscribe(const std::string& topic);
     bool publish(const std::string& topic, const std::string& message);
     void registerOnConnected(std::function<void(MqttClient&)> callback);
+    void registerOnDisconnected(std::function<void(MqttClient&)> callback);
 
     void start();
     void stop();
@@ -30,6 +31,7 @@ class MqttClient {
     std::unordered_map<std::string, std::shared_ptr<MqttEventHandler>> handlers;
     std::mutex handlersMutex;
     std::function<void(MqttClient&)> onConnectedCallback;
+    std::function<void(MqttClient&)> onDisconnectedCallback;
     std::optional<std::string> topicPrefix;
 
     std::string clientKey;

@@ -24,4 +24,5 @@ class WifiManager {
     std::function<void()> onConnectedCallback;
     bool apReceived = false;
     bool pendingNewCredentials = false;
+    bool manualDisconnect = false;
 };

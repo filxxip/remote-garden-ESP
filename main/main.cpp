@@ -33,11 +33,11 @@ extern "C" void app_main(void) {
     }
 
     // @TODO remove scope
-    if (DeviceProvisioner::removeProvisioned()) {
-        ESP_LOGI(TAG, "Provisioned files removed successfully");
-    } else {
-        ESP_LOGW(TAG, "Some provisioned files could not be removed");
-    }
+    // if (DeviceProvisioner::removeProvisioned()) {
+    //     ESP_LOGI(TAG, "Provisioned files removed successfully");
+    // } else {
+    //     ESP_LOGW(TAG, "Some provisioned files could not be removed");
+    // }
 
     auto wifi = std::make_shared<WifiManager>();
     wifi->init();
@@ -48,6 +48,13 @@ extern "C" void app_main(void) {
     MockSensorFactory sensorFactory;
 
     std::array<std::unique_ptr<SensorPollingManager>, 2> sensorManagers;
+
+    mqtt->registerOnDisconnected([mqtt, &actuatorFactory, &sensorFactory,
+                                  &sensorManagers, wifi](MqttClient& client) {
+        // mqtt->unsubscribe("device/control");
+        // mqtt->unsubscribe("reset");
+        sensorManagers = {};
+    });
 
     mqtt->registerOnConnected([mqtt, &actuatorFactory, &sensorFactory,
                                &sensorManagers, wifi](MqttClient& client) {

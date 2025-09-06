@@ -43,6 +43,8 @@ bool WifiManager::connect(const std::string& ssid, const std::string& pass,
             sizeof(wifi_config.sta.ssid));
     strncpy((char*)wifi_config.sta.password, pass.c_str(),
             sizeof(wifi_config.sta.password));
+    // @TODO store pass and ssid in nvs (remove after reset) and try to connect
+    // automatically after reboot
 
     esp_err_t err = esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
     if (err != ESP_OK) {
@@ -58,6 +60,16 @@ void WifiManager::disconnect() {
     if (!apReceived) {
         ESP_LOGW(TAG, "AP was not received, cannot disconnect");
         return;
+    }
+
+    manualDisconnect = true;
+
+    wifi_config_t wifi_config{};
+    esp_err_t err = esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to clear Wi-Fi config: %s", esp_err_to_name(err));
+    } else {
+        ESP_LOGI(TAG, "Wi-Fi credentials cleared");
     }
 
     if (auto err = esp_wifi_disconnect(); err == ESP_OK) {
@@ -113,6 +125,12 @@ void WifiManager::onDisconnected(void* arg, esp_event_base_t base, int32_t id,
                                  void* data) {
     auto* self = static_cast<WifiManager*>(arg);
     ESP_LOGW(TAG, "Disconnected from Wi-Fi");
+
+    if (self->manualDisconnect) {
+        ESP_LOGI(TAG, "Manual disconnect, not retrying");
+        self->manualDisconnect = false;
+        return;
+    }
 
     if (!self->pendingNewCredentials) {
         ESP_LOGI(TAG, "Retrying Wi-Fi connect...");

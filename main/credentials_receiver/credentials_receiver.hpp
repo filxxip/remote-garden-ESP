@@ -4,6 +4,8 @@
 #include <string>
 
 #include "bluetooth_manager/bluetooth_manager.hpp"
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 #include "mqtt/mqtt_client/mqtt_client_impl.hpp"
 #include "wifi_manager/wifi_manager.hpp"
 
@@ -29,4 +31,6 @@ class CredentialsReceiver {
     std::string ssid;
     std::string password;
     std::string userKey;
+
+    SemaphoreHandle_t mutex;
 };

@@ -4,6 +4,8 @@
 
 #include "utils/device_provisioner/device_provisioner.hpp"
 #include "utils/file_manager/file_manager.hpp"
+#include "utils/nvs_manager/nvs_credentials_manager.hpp"
+#include "utils/scoped_lock/scoped_lock.hpp"
 
 #define CHAR_UUID_SSID 0xFF01
 #define CHAR_UUID_PASS 0xFF02
@@ -24,9 +26,33 @@ struct ProvisioningTaskArgs {
 CredentialsReceiver::CredentialsReceiver(
     std::unique_ptr<BluetoothManager> newBle,
     std::shared_ptr<WifiManager> newWifi, std::shared_ptr<MqttClient> newMqtt)
-    : ble(std::move(newBle)), wifi(newWifi), mqtt(newMqtt) {}
+    : ble(std::move(newBle)),
+      wifi(newWifi),
+      mqtt(newMqtt),
+      mutex(xSemaphoreCreateMutex()) {
+    if (mutex == nullptr) {
+        ESP_LOGE("CredentialsReceiver", "Failed to create mutex");
+    }
+}
 
 void CredentialsReceiver::init() {
+    NvsCredentialsManager::Credentials stored;
+    if (NvsCredentialsManager::load(stored)) {
+        ESP_LOGI(
+            TAG,
+            "Found stored wifi credentials, calling onCredentialsReceived...");
+        if (std::string content;
+            FileManager::readFromFile(USER_KEY_PATH, content)) {
+            onCredentialsReceived(stored.ssid, stored.password, content);
+        } else {
+            ESP_LOGE(TAG,
+                     "Cannot automatically connect to wifi because there is no "
+                     "user id specified");
+        }
+    } else {
+        ESP_LOGW(TAG, "No wifi credentials stored");
+    }
+
     ble->addCharacteristic({.uuid16 = CHAR_UUID_SSID,
                             .bufferSize = 32,
                             .label = "SSID",
@@ -54,6 +80,8 @@ void CredentialsReceiver::init() {
 void CredentialsReceiver::onCredentialsReceived(const std::string& ssid,
                                                 const std::string& password,
                                                 const std::string& userKey) {
+    ScopedLock lock(mutex);
+
     if (FileManager::fileExists(USER_KEY_PATH)) {
         std::string content;
         if (FileManager::readFromFile(USER_KEY_PATH, content);
@@ -65,6 +93,13 @@ void CredentialsReceiver::onCredentialsReceived(const std::string& ssid,
     } else {
         FileManager::writeToFile(USER_KEY_PATH, userKey);
         ESP_LOGI(TAG, "User key is writted to file");
+    }
+
+    if (NvsCredentialsManager::Credentials newCreds{ssid, password};
+        NvsCredentialsManager::save(newCreds)) {
+        ESP_LOGI(TAG, "Credentials saved to NVS");
+    } else {
+        ESP_LOGE(TAG, "Failed to save credentials to NVS");
     }
 
     vTaskDelay(pdMS_TO_TICKS(600));
@@ -114,11 +149,13 @@ void CredentialsReceiver::onCredentialsReceived(const std::string& ssid,
                 // garden, tylko ze statusem online pokaze albo jakis bool jaki
                 // status
 
+                // w sumie chyb tylko do notyfikacji spoko
+
                 ESP_LOGI(TAG, "Provisioning task completed successfully.");
                 vTaskDelete(NULL);
             },
-            "provisioning_task", 12288, new ProvisioningTaskArgs{this, ssid}, 5,
-            NULL);
+            "provisioning_task", 12288, new ProvisioningTaskArgs{this, userKey},
+            5, NULL);
     });
 
     wifi->connect(ssid, password);

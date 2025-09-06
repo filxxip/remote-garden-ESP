@@ -52,8 +52,10 @@ idf_component_register(
         utils/file_manager/file_manager.cpp
         utils/json_utils/json_utils.cpp
         utils/nvs_manager/nvs_manager.cpp
+        utils/nvs_manager/nvs_credentials_manager.cpp
         utils/http_manager/http_manager.cpp
         utils/spiffs_manager/spiffs_manager.cpp
+        utils/scoped_lock/scoped_lock.cpp
 
         wifi_manager/wifi_manager.cpp
 

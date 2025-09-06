@@ -41,6 +41,8 @@ idf_component_register(
 
         mqtt/handlers/device_control_handler/device_control_handler.cpp
         mqtt/handlers/reset_handler/reset_handler.cpp
+        mqtt/handlers/stop_handler/stop_handler.cpp
+        mqtt/handlers/resume_handler/resume_handler.cpp
         mqtt/mqtt_client/mqtt_client_impl.cpp
 
         sensor_polling_manager/sensor_polling_manager.cpp

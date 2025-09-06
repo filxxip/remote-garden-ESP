@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <memory>
 #include <vector>
 
@@ -12,6 +13,8 @@ class SensorPollingManager {
     ~SensorPollingManager();
 
     virtual void action(const std::shared_ptr<SensorClient>& sensor) const = 0;
+    void stop();
+    void resume();
 
    private:
     static void pollingTask(void* pvParameters);
@@ -19,4 +22,5 @@ class SensorPollingManager {
     std::vector<std::shared_ptr<SensorClient>> sensors;
     int intervalMs;
     TaskHandle_t taskHandle = nullptr;
+    std::atomic<bool> isStopped{false};
 };

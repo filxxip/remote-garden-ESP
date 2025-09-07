@@ -22,5 +22,5 @@ class PollingManager {
 
     int intervalMs;
     TaskHandle_t taskHandle = nullptr;
-    std::atomic<bool> isStopped{false};
+    std::atomic<bool> isStopped{true};
 };

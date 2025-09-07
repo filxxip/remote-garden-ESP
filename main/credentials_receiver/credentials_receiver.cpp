@@ -14,7 +14,7 @@
 namespace {
 constexpr const char* MQTT_URL = "mqtts://192.168.100.3:8883";
 constexpr const char* TAG = "CredentialsReceiver";
-constexpr const char* USER_KEY_PATH = "/spiffs/user.txt";
+constexpr const char* USER_KEY_PATH = "/littlefs/user.txt";
 
 struct ProvisioningTaskArgs {
     CredentialsReceiver* self;

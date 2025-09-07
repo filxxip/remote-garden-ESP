@@ -15,10 +15,9 @@
 #include "polling_manager/sensor_polling_manager/sensor_polling_manager.hpp"
 #include "polling_manager/sensor_polling_manager/sensor_publisher/sensor_publisher.hpp"
 #include "polling_manager/sensor_polling_manager/sensor_reader/sensor_reader.hpp"
-#include "polling_manager/spiffs_polling_manager/spiffs_polling_manager.hpp"
 #include "utils/device_provisioner/device_provisioner.hpp"
+#include "utils/littlefs_manager/littlefs_manager.hpp"
 #include "utils/nvs_manager/nvs_manager.hpp"
-#include "utils/spiffs_manager/spiffs_manager.hpp"
 #include "wifi_manager/wifi_manager.hpp"
 
 namespace {
@@ -30,8 +29,8 @@ extern "C" void app_main(void) {
         ESP_LOGE(TAG, "Failed to initialize NVS!");
         return;
     }
-    if (!SpiffsManager::init()) {
-        ESP_LOGE(TAG, "Failed to initialize Spiffs!");
+    if (!LittleFsManager::init()) {
+        ESP_LOGE(TAG, "Failed to initialize Littlefs!");
         return;
     }
 
@@ -49,9 +48,20 @@ extern "C" void app_main(void) {
     MockActuatorFactory actuatorFactory;
     MockSensorFactory sensorFactory;
 
-    std::array<std::shared_ptr<PollingManager>, 2> sensorManagers;
-    auto spiffs_manager = std::make_shared<SpiffsPollingManager>();
-    spiffs_manager->start();
+    std::vector<std::shared_ptr<SensorClient>> sensors = {
+        sensorFactory.create(SensorType::Light, mqtt, wifi),
+        sensorFactory.create(SensorType::AirHumidity, mqtt, wifi),
+        sensorFactory.create(SensorType::SoilMoisture, mqtt, wifi),
+        sensorFactory.create(SensorType::AirTemperature, mqtt, wifi),
+        sensorFactory.create(SensorType::Battery, mqtt, wifi),
+        sensorFactory.create(SensorType::SignalStrength, mqtt, wifi),
+    };
+
+    std::array<std::shared_ptr<PollingManager>, 2> sensorManagers = {
+        std::make_shared<SensorReader>(sensors, 3000),
+        std::make_shared<SensorPublisher>(sensors, 20000)};
+    sensorManagers.at(0)->start();
+    sensorManagers.at(1)->start();
 
     mqtt->registerOnDisconnected([mqtt, &actuatorFactory, &sensorFactory,
                                   &sensorManagers, wifi](MqttClient& client) {
@@ -66,18 +76,11 @@ extern "C" void app_main(void) {
 
     mqtt->registerOnConnected([mqtt, &actuatorFactory, &sensorFactory,
                                &sensorManagers, wifi](MqttClient& client) {
-        std::vector<std::shared_ptr<SensorClient>> sensors = {
-            sensorFactory.create(SensorType::Light, mqtt, wifi),
-            sensorFactory.create(SensorType::AirHumidity, mqtt, wifi),
-            sensorFactory.create(SensorType::SoilMoisture, mqtt, wifi),
-            sensorFactory.create(SensorType::AirTemperature, mqtt, wifi),
-            sensorFactory.create(SensorType::Battery, mqtt, wifi),
-            sensorFactory.create(SensorType::SignalStrength, mqtt, wifi),
-        };
-
-        sensorManagers = {std::make_shared<SensorReader>(sensors, 3000),
-                          std::make_shared<SensorPublisher>(sensors, 20000)};
-
+        for (auto& manager : sensorManagers) {
+            if (manager) {
+                manager->resume();
+            }
+        }
         auto atomize = actuatorFactory.create(ActuatorType::Atomize, mqtt);
         auto fan = actuatorFactory.create(ActuatorType::Fan, mqtt);
         auto heating = actuatorFactory.create(ActuatorType::HeatingMat, mqtt);

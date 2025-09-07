@@ -5,18 +5,16 @@
 #include "utils/crypto/crypto.hpp"
 #include "utils/file_manager/file_manager.hpp"
 #include "utils/http_manager/http_manager.hpp"
-#include "utils/spiffs_manager/spiffs_manager.hpp"
+#include "utils/littlefs_manager/littlefs_manager.hpp"
 
 namespace {
 constexpr const char* TAG = "PROVISION";
-constexpr const char* DEVICE_ID_PATH = "/spiffs/device_id.txt";  // not
-                                                                 // encrypted
-constexpr const char* DEVICE_SECRET_PATH = "/spiffs/device_secret.txt";
-constexpr const char* CLIENT_KEY_PATH = "/spiffs/client.key";
-constexpr const char* CLIENT_CERT_PATH = "/spiffs/client.crt";
-constexpr const char* CA_CERT_PATH = "/spiffs/ca.crt";
-constexpr const char* USER_KEY_PATH = "/spiffs/user.txt";  // not
-                                                           // encrypted
+constexpr const char* DEVICE_ID_PATH = "/littlefs/device_id.txt";
+constexpr const char* DEVICE_SECRET_PATH = "/littlefs/device_secret.txt";
+constexpr const char* CLIENT_KEY_PATH = "/littlefs/client.key";
+constexpr const char* CLIENT_CERT_PATH = "/littlefs/client.crt";
+constexpr const char* CA_CERT_PATH = "/littlefs/ca.crt";
+constexpr const char* USER_KEY_PATH = "/littlefs/user.txt";
 
 constexpr const char* SERVER_URL = "http://192.168.100.3:3000";
 constexpr const char* PATH = "/api/esp/register";
@@ -28,7 +26,7 @@ bool readFile(const char* path, std::string& out) {
 }
 
 bool readEncrypted(const char* path, std::string& out) {
-    auto result = SpiffsManager::readEncrypted(path, out);
+    auto result = FileManager::readFromFile(path, out);
     ESP_LOGI(TAG, "Read '%s' from %s", out.c_str(), path);
     return result;
 }
@@ -38,8 +36,8 @@ bool saveKeyAndCert(const std::string& key, const std::string& cert) {
              CLIENT_KEY_PATH);
     ESP_LOGI(TAG, "Try to save content %s to file %s", cert.c_str(),
              CLIENT_CERT_PATH);
-    return SpiffsManager::writeEncrypted(CLIENT_KEY_PATH, key) &&
-           SpiffsManager::writeEncrypted(CLIENT_CERT_PATH, cert);
+    return FileManager::writeToFile(CLIENT_KEY_PATH, key) &&
+           FileManager::writeToFile(CLIENT_CERT_PATH, cert);
 }
 
 bool sendCsrAndGetCert(const std::string& deviceId,
@@ -59,8 +57,8 @@ bool sendCsrAndGetCert(const std::string& deviceId,
 }  // anonymous namespace
 
 bool DeviceProvisioner::isProvisioned() {
-    return SpiffsManager::fileExists(CLIENT_KEY_PATH) &&
-           SpiffsManager::fileExists(CLIENT_CERT_PATH);
+    return FileManager::fileExists(CLIENT_KEY_PATH) &&
+           FileManager::fileExists(CLIENT_CERT_PATH);
 }
 
 bool DeviceProvisioner::ensureProvisioning() {
@@ -118,8 +116,8 @@ DeviceProvisioner::TlsCred DeviceProvisioner::loadTlsCredentials() {
 
 bool DeviceProvisioner::removeProvisioned() {
     bool ok = true;
-    ok &= SpiffsManager::deleteFile(CLIENT_KEY_PATH);
-    ok &= SpiffsManager::deleteFile(CLIENT_CERT_PATH);
+    ok &= FileManager::deleteFile(CLIENT_KEY_PATH);
+    ok &= FileManager::deleteFile(CLIENT_CERT_PATH);
     ok &= FileManager::deleteFile(USER_KEY_PATH);
     return ok;
 }

@@ -2,7 +2,6 @@
 
 #include <esp_err.h>
 #include <esp_log.h>
-#include <esp_spiffs.h>
 
 #include "utils/device_provisioner/device_provisioner.hpp"
 
@@ -105,7 +104,7 @@ void MqttClient::unsubscribe(const std::string& topic) {
 
 bool MqttClient::publish(const std::string& topic, const std::string& message) {
     if (!topicPrefix.has_value()) {
-        ESP_LOGE(TAG, "Cannot unsubscribe because topic prefix is not defined");
+        ESP_LOGE(TAG, "Cannot publish because topic prefix is not defined");
         return false;
     }
 
@@ -187,6 +186,7 @@ void MqttClient::mqtt_event_handler(void* handler_args, esp_event_base_t base,
             break;
         case MQTT_EVENT_DISCONNECTED:
             ESP_LOGI(TAG, "MQTT disconnected");
+            self->publish("status", R"({"online":false})");
             if (self->onDisconnectedCallback) {
                 self->onDisconnectedCallback(*self);
             }

@@ -45,9 +45,11 @@ idf_component_register(
         mqtt/handlers/resume_handler/resume_handler.cpp
         mqtt/mqtt_client/mqtt_client_impl.cpp
 
-        sensor_polling_manager/sensor_polling_manager.cpp
-        sensor_polling_manager/sensor_publisher/sensor_publisher.cpp
-        sensor_polling_manager/sensor_reader/sensor_reader.cpp
+        polling_manager/polling_manager.cpp
+        polling_manager/sensor_polling_manager/sensor_polling_manager.cpp
+        polling_manager/sensor_polling_manager/sensor_publisher/sensor_publisher.cpp
+        polling_manager/sensor_polling_manager/sensor_reader/sensor_reader.cpp
+        polling_manager/spiffs_polling_manager/spiffs_polling_manager.cpp
 
         utils/crypto/crypto.cpp
         utils/device_provisioner/device_provisioner.cpp

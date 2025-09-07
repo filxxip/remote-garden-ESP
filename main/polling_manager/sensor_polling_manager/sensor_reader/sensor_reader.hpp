@@ -1,8 +1,8 @@
 #pragma once
 
-#include "sensor_polling_manager/sensor_polling_manager.hpp"
+#include "polling_manager/sensor_polling_manager/sensor_polling_manager.hpp"
 
-class SensorPublisher final : public SensorPollingManager {
+class SensorReader final : public SensorPollingManager {
    public:
     using SensorPollingManager::SensorPollingManager;
 

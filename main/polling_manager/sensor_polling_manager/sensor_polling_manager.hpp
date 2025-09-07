@@ -5,22 +5,16 @@
 #include <vector>
 
 #include "clients/sensors/clients/sensor_client.hpp"
+#include "polling_manager/polling_manager.hpp"
 
-class SensorPollingManager {
+class SensorPollingManager : public PollingManager {
    public:
     SensorPollingManager(std::vector<std::shared_ptr<SensorClient>> sensors,
                          int intervalMs = 5000);
-    ~SensorPollingManager();
 
+    void pollAction() const;
     virtual void action(const std::shared_ptr<SensorClient>& sensor) const = 0;
-    void stop();
-    void resume();
 
    private:
-    static void pollingTask(void* pvParameters);
-
     std::vector<std::shared_ptr<SensorClient>> sensors;
-    int intervalMs;
-    TaskHandle_t taskHandle = nullptr;
-    std::atomic<bool> isStopped{false};
 };

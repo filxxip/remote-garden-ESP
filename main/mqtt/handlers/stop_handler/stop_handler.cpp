@@ -10,9 +10,8 @@ namespace {
 constexpr const char* TAG = "StopHandler";
 }
 
-StopHandler::StopHandler(
-    std::shared_ptr<MqttClient> mqtt,
-    std::array<std::shared_ptr<SensorPollingManager>, 2> sensors)
+StopHandler::StopHandler(std::shared_ptr<MqttClient> mqtt,
+                         std::array<std::shared_ptr<PollingManager>, 2> sensors)
     : mqtt(std::move(mqtt)), sensors(std::move(sensors)) {}
 
 void StopHandler::operate(const std::string& topic,

@@ -12,9 +12,10 @@
 #include "mqtt/handlers/resume_handler/resume_handler.hpp"
 #include "mqtt/handlers/stop_handler/stop_handler.hpp"
 #include "mqtt/mqtt_client/mqtt_client_impl.hpp"
-#include "sensor_polling_manager/sensor_polling_manager.hpp"
-#include "sensor_polling_manager/sensor_publisher/sensor_publisher.hpp"
-#include "sensor_polling_manager/sensor_reader/sensor_reader.hpp"
+#include "polling_manager/sensor_polling_manager/sensor_polling_manager.hpp"
+#include "polling_manager/sensor_polling_manager/sensor_publisher/sensor_publisher.hpp"
+#include "polling_manager/sensor_polling_manager/sensor_reader/sensor_reader.hpp"
+#include "polling_manager/spiffs_polling_manager/spiffs_polling_manager.hpp"
 #include "utils/device_provisioner/device_provisioner.hpp"
 #include "utils/nvs_manager/nvs_manager.hpp"
 #include "utils/spiffs_manager/spiffs_manager.hpp"
@@ -25,16 +26,15 @@ constexpr const char* TAG = "Main";
 }
 
 extern "C" void app_main(void) {
-    if (!SpiffsManager::init()) {
-        ESP_LOGE(TAG, "Failed to initialize Spiffs!");
-        return;
-    }
     if (!NvsManager::init()) {
         ESP_LOGE(TAG, "Failed to initialize NVS!");
         return;
     }
+    if (!SpiffsManager::init()) {
+        ESP_LOGE(TAG, "Failed to initialize Spiffs!");
+        return;
+    }
 
-    // @TODO remove scope
     // if (DeviceProvisioner::removeProvisioned()) {
     //     ESP_LOGI(TAG, "Provisioned files removed successfully");
     // } else {
@@ -49,7 +49,9 @@ extern "C" void app_main(void) {
     MockActuatorFactory actuatorFactory;
     MockSensorFactory sensorFactory;
 
-    std::array<std::shared_ptr<SensorPollingManager>, 2> sensorManagers;
+    std::array<std::shared_ptr<PollingManager>, 2> sensorManagers;
+    auto spiffs_manager = std::make_shared<SpiffsPollingManager>();
+    spiffs_manager->start();
 
     mqtt->registerOnDisconnected([mqtt, &actuatorFactory, &sensorFactory,
                                   &sensorManagers, wifi](MqttClient& client) {

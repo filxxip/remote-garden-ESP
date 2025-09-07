@@ -5,15 +5,18 @@
 #include "utils/crypto/crypto.hpp"
 #include "utils/file_manager/file_manager.hpp"
 #include "utils/http_manager/http_manager.hpp"
+#include "utils/spiffs_manager/spiffs_manager.hpp"
 
 namespace {
 constexpr const char* TAG = "PROVISION";
-constexpr const char* DEVICE_ID_PATH = "/spiffs/device_id.txt";
+constexpr const char* DEVICE_ID_PATH = "/spiffs/device_id.txt";  // not
+                                                                 // encrypted
 constexpr const char* DEVICE_SECRET_PATH = "/spiffs/device_secret.txt";
 constexpr const char* CLIENT_KEY_PATH = "/spiffs/client.key";
 constexpr const char* CLIENT_CERT_PATH = "/spiffs/client.crt";
 constexpr const char* CA_CERT_PATH = "/spiffs/ca.crt";
-constexpr const char* USER_KEY_PATH = "/spiffs/user.txt";
+constexpr const char* USER_KEY_PATH = "/spiffs/user.txt";  // not
+                                                           // encrypted
 
 constexpr const char* SERVER_URL = "http://192.168.100.3:3000";
 constexpr const char* PATH = "/api/esp/register";
@@ -24,13 +27,19 @@ bool readFile(const char* path, std::string& out) {
     return result;
 }
 
+bool readEncrypted(const char* path, std::string& out) {
+    auto result = SpiffsManager::readEncrypted(path, out);
+    ESP_LOGI(TAG, "Read '%s' from %s", out.c_str(), path);
+    return result;
+}
+
 bool saveKeyAndCert(const std::string& key, const std::string& cert) {
     ESP_LOGI(TAG, "Try to save content %s to file %s", key.c_str(),
              CLIENT_KEY_PATH);
     ESP_LOGI(TAG, "Try to save content %s to file %s", cert.c_str(),
              CLIENT_CERT_PATH);
-    return FileManager::writeToFile(CLIENT_KEY_PATH, key) &&
-           FileManager::writeToFile(CLIENT_CERT_PATH, cert);
+    return SpiffsManager::writeEncrypted(CLIENT_KEY_PATH, key) &&
+           SpiffsManager::writeEncrypted(CLIENT_CERT_PATH, cert);
 }
 
 bool sendCsrAndGetCert(const std::string& deviceId,
@@ -50,8 +59,8 @@ bool sendCsrAndGetCert(const std::string& deviceId,
 }  // anonymous namespace
 
 bool DeviceProvisioner::isProvisioned() {
-    return FileManager::fileExists(CLIENT_KEY_PATH) &&
-           FileManager::fileExists(CLIENT_CERT_PATH);
+    return SpiffsManager::fileExists(CLIENT_KEY_PATH) &&
+           SpiffsManager::fileExists(CLIENT_CERT_PATH);
 }
 
 bool DeviceProvisioner::ensureProvisioning() {
@@ -62,7 +71,7 @@ bool DeviceProvisioner::ensureProvisioning() {
 
     std::string deviceId, deviceSecret, userKey;
     if (!readFile(DEVICE_ID_PATH, deviceId) ||
-        !readFile(DEVICE_SECRET_PATH, deviceSecret) ||
+        !readEncrypted(DEVICE_SECRET_PATH, deviceSecret) ||
         !readFile(USER_KEY_PATH, userKey)) {
         ESP_LOGE(TAG, "Missing device_id, secret, or user_key");
         return false;
@@ -92,13 +101,13 @@ bool DeviceProvisioner::ensureProvisioning() {
 
 DeviceProvisioner::TlsCred DeviceProvisioner::loadTlsCredentials() {
     std::string key, cert, ca, device;
-    if (!FileManager::readFromFile(CLIENT_KEY_PATH, key)) {
+    if (!readEncrypted(CLIENT_KEY_PATH, key)) {
         ESP_LOGE(TAG, "Failed to load client.key");
     }
-    if (!FileManager::readFromFile(CLIENT_CERT_PATH, cert)) {
+    if (!readEncrypted(CLIENT_CERT_PATH, cert)) {
         ESP_LOGE(TAG, "Failed to load client.crt");
     }
-    if (!FileManager::readFromFile(CA_CERT_PATH, ca)) {
+    if (!readEncrypted(CA_CERT_PATH, ca)) {
         ESP_LOGE(TAG, "Failed to load ca.crt");
     }
     if (!FileManager::readFromFile(DEVICE_ID_PATH, device)) {
@@ -109,8 +118,8 @@ DeviceProvisioner::TlsCred DeviceProvisioner::loadTlsCredentials() {
 
 bool DeviceProvisioner::removeProvisioned() {
     bool ok = true;
-    ok &= FileManager::deleteFile(CLIENT_KEY_PATH);
-    ok &= FileManager::deleteFile(CLIENT_CERT_PATH);
+    ok &= SpiffsManager::deleteFile(CLIENT_KEY_PATH);
+    ok &= SpiffsManager::deleteFile(CLIENT_CERT_PATH);
     ok &= FileManager::deleteFile(USER_KEY_PATH);
     return ok;
 }

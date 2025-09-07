@@ -60,22 +60,6 @@ bool HttpManager::post(std::string& response, const std::string& logTag) {
     return performRequest(HTTP_METHOD_POST, response, logTag);
 }
 
-bool HttpManager::postAndSaveToFile(const std::string& filePath,
-                                    const std::string& logTag) {
-    std::string response;
-    if (!post(response, logTag)) {
-        return false;
-    }
-    if (!FileManager::writeToFile(filePath, response)) {
-        ESP_LOGE(logTag.c_str(), "Failed to save response to file: %s",
-                 filePath.c_str());
-        return false;
-    }
-    ESP_LOGI(logTag.c_str(), "Saved response to %s (%d bytes)",
-             filePath.c_str(), (int)response.size());
-    return true;
-}
-
 bool HttpManager::performRequest(esp_http_client_method_t method,
                                  std::string& responseOut,
                                  const std::string& logTag) {
@@ -93,14 +77,12 @@ bool HttpManager::performRequest(esp_http_client_method_t method,
         return false;
     }
 
-    // Ustawiamy nagłówki
     for (const auto& [key, value] : headers) {
         esp_http_client_set_header(client, key.c_str(), value.c_str());
     }
 
     esp_http_client_set_method(client, method);
 
-    // Sprawdzamy czy metoda może mieć body (POST, PUT, PATCH)
     bool hasBody = (method == HTTP_METHOD_POST || method == HTTP_METHOD_PUT ||
                     method == HTTP_METHOD_PATCH) &&
                    !body_.empty();
@@ -111,7 +93,6 @@ bool HttpManager::performRequest(esp_http_client_method_t method,
         ESP_LOGI(logTag.c_str(), "Request body size: %d", bodyLength);
     }
 
-    // Otwieramy połączenie
     esp_err_t err = esp_http_client_open(client, bodyLength);
     if (err != ESP_OK) {
         ESP_LOGE(logTag.c_str(), "Failed to open connection: %s",
@@ -120,7 +101,6 @@ bool HttpManager::performRequest(esp_http_client_method_t method,
         return false;
     }
 
-    // Wysyłamy dane jeśli metoda to wymaga
     if (hasBody) {
         int written =
             esp_http_client_write(client, body_.c_str(), body_.length());
@@ -133,20 +113,17 @@ bool HttpManager::performRequest(esp_http_client_method_t method,
         ESP_LOGI(logTag.c_str(), "Written %d bytes", written);
     }
 
-    // Pobieramy nagłówki odpowiedzi i status
     int content_length = esp_http_client_fetch_headers(client);
     int status = esp_http_client_get_status_code(client);
 
     ESP_LOGI(logTag.c_str(), "HTTP %s %s -> Status: %d, Content-Length: %d",
              getMethodName(method), url.c_str(), status, content_length);
 
-    // Sprawdzamy status kod
     bool statusOk = (status >= 200 && status < 300);
     if (!statusOk) {
         ESP_LOGW(logTag.c_str(), "HTTP error status: %d", status);
     }
 
-    // Czytamy odpowiedź (nawet jeśli status nie jest OK, może zawierać błąd)
     std::string response;
     if (content_length > 0) {
         response.reserve(content_length);
@@ -158,7 +135,6 @@ bool HttpManager::performRequest(esp_http_client_method_t method,
     while (true) {
         int read_len = esp_http_client_read(client, buffer, sizeof(buffer));
         if (read_len == 0) {
-            // Koniec danych
             break;
         } else if (read_len < 0) {
             ESP_LOGE(logTag.c_str(), "Error reading response: %s",
@@ -168,7 +144,6 @@ bool HttpManager::performRequest(esp_http_client_method_t method,
             response.append(buffer, read_len);
             total_read += read_len;
 
-            // Jeśli znamy content_length i przeczytaliśmy wszystko
             if (content_length > 0 && total_read >= content_length) {
                 break;
             }
@@ -177,7 +152,6 @@ bool HttpManager::performRequest(esp_http_client_method_t method,
 
     ESP_LOGI(logTag.c_str(), "Received %d bytes", (int)response.size());
 
-    // Debug preview dla niepustych odpowiedzi
     if (!response.empty()) {
         std::string preview =
             response.substr(0, std::min(200, (int)response.size()));
@@ -193,7 +167,5 @@ bool HttpManager::performRequest(esp_http_client_method_t method,
     esp_http_client_close(client);
     esp_http_client_cleanup(client);
 
-    // Zwracamy true jeśli status OK (niezależnie od tego czy jest response
-    // body)
     return statusOk;
 }

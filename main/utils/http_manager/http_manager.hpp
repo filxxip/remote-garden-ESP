@@ -16,8 +16,6 @@ class HttpManager {
 
     bool get(std::string& response, const std::string& logTag = "HTTP");
     bool post(std::string& response, const std::string& logTag = "HTTP");
-    bool postAndSaveToFile(const std::string& filePath,
-                           const std::string& logTag = "HTTP");
 
    private:
     bool performRequest(esp_http_client_method_t method,

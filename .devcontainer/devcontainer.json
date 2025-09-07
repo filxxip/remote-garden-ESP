@@ -25,7 +25,7 @@
   "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind,consistency=cached",
   "workspaceFolder": "${localWorkspaceFolder}",
   "runArgs": [
-    "--device=/dev/ttyUSB0",
+    "--device=/dev/ttyACM0",
     "--net=host",
     "--privileged",
     "--volume=/var/run/dbus:/var/run/dbus"

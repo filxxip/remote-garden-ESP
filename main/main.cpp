@@ -16,6 +16,7 @@
 #include "sensor_polling_manager/sensor_publisher/sensor_publisher.hpp"
 #include "sensor_polling_manager/sensor_reader/sensor_reader.hpp"
 #include "utils/device_provisioner/device_provisioner.hpp"
+#include "utils/littlefs_manager/littlefs_manager.hpp"
 #include "utils/nvs_manager/nvs_manager.hpp"
 #include "utils/spiffs_manager/spiffs_manager.hpp"
 #include "wifi_manager/wifi_manager.hpp"
@@ -25,8 +26,8 @@ constexpr const char* TAG = "Main";
 }
 
 extern "C" void app_main(void) {
-    if (!SpiffsManager::init()) {
-        ESP_LOGE(TAG, "Failed to initialize Spiffs!");
+    if (!LittlefsManager::init()) {
+        ESP_LOGE(TAG, "Failed to initialize Littlefs!");
         return;
     }
     if (!NvsManager::init()) {

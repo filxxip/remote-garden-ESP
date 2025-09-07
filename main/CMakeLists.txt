@@ -57,10 +57,11 @@ idf_component_register(
         utils/nvs_manager/nvs_credentials_manager.cpp
         utils/http_manager/http_manager.cpp
         utils/spiffs_manager/spiffs_manager.cpp
+        utils/littlefs_manager/littlefs_manager.cpp
         utils/scoped_lock/scoped_lock.cpp
 
         wifi_manager/wifi_manager.cpp
 
     INCLUDE_DIRS "."
-    REQUIRES bt nvs_flash mqtt json driver esp_adc spiffs mbedtls esp_http_client
+    REQUIRES bt nvs_flash mqtt json driver esp_adc spiffs mbedtls esp_http_client littlefs
 )

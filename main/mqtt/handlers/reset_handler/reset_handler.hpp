@@ -2,15 +2,16 @@
 
 #include <memory>
 
+#include "mqtt/heavy_mqtt_event_handler.hpp"
 #include "mqtt/mqtt_client/mqtt_client_impl.hpp"
-#include "mqtt/mqtt_event_handler.hpp"
 #include "wifi_manager/wifi_manager.hpp"
 
-class ResetHandler : public MqttEventHandler {
+class ResetHandler final : public HeavyMqttEventHandler {
    public:
     ResetHandler(std::shared_ptr<WifiManager> wifi,
                  std::shared_ptr<MqttClient> mqtt);
-    void operate(const std::string& topic, const std::string& payload) override;
+    void handleHeavy(const std::string& topic,
+                     const std::string& payload) override;
 
    private:
     std::shared_ptr<WifiManager> wifi;

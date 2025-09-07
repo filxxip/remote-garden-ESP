@@ -39,6 +39,7 @@ idf_component_register(
 
         credentials_receiver/credentials_receiver.cpp
 
+        mqtt/heavy_mqtt_event_handler.cpp
         mqtt/handlers/device_control_handler/device_control_handler.cpp
         mqtt/handlers/reset_handler/reset_handler.cpp
         mqtt/handlers/stop_handler/stop_handler.cpp

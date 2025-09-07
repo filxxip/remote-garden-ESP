@@ -14,8 +14,8 @@ ResetHandler::ResetHandler(std::shared_ptr<WifiManager> wifi,
                            std::shared_ptr<MqttClient> mqtt)
     : wifi(std::move(wifi)), mqtt(std::move(mqtt)) {}
 
-void ResetHandler::operate(const std::string& topic,
-                           const std::string& payload) {
+void ResetHandler::handleHeavy(const std::string& topic,
+                               const std::string& payload) {
     ESP_LOGI(TAG, "Received message on %s: %s", topic.c_str(), payload.c_str());
 
     if (DeviceProvisioner::removeProvisioned()) {

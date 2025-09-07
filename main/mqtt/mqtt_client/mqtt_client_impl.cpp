@@ -157,6 +157,10 @@ void MqttClient::stop() {
         return;
     }
 
+    publish("status",
+            R"({"online":false})");  // cannot be inside disconnected event
+                                     // because there is no connection to broker
+    vTaskDelay(pdMS_TO_TICKS(100));
     esp_err_t err = esp_mqtt_client_stop(client);
     if (err == ESP_OK) {
         ESP_LOGI(TAG, "MQTT client stopped");
@@ -186,7 +190,7 @@ void MqttClient::mqtt_event_handler(void* handler_args, esp_event_base_t base,
             break;
         case MQTT_EVENT_DISCONNECTED:
             ESP_LOGI(TAG, "MQTT disconnected");
-            self->publish("status", R"({"online":false})");
+            // self->publish("status", R"({"online":false})");
             if (self->onDisconnectedCallback) {
                 self->onDisconnectedCallback(*self);
             }

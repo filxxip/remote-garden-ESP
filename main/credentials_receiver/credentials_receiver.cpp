@@ -119,7 +119,9 @@ void CredentialsReceiver::onCredentialsReceived(const std::string& ssid,
                 const std::string userKey = args->userKey;
                 delete args;
 
-                ESP_LOGI(TAG, "Provisioning task started. Free heap: %zu bytes",
+                ESP_LOGI(TAG,
+                         "Provisioning task started. Free heap: %" PRIu32
+                         " bytes",
                          esp_get_free_heap_size());
 
                 bool success = DeviceProvisioner::ensureProvisioning();

@@ -1,3 +1,4 @@
 build
 tools/ble/.env
 managed_components
+release

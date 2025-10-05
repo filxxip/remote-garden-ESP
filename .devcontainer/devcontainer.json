@@ -29,7 +29,9 @@
     "LC_ALL": "C.UTF-8",
     "LANG": "C.UTF-8",
     "IDF_PATH": "/opt/esp/idf",
-    "IDF_TOOLS_PATH": "/opt/esp"
+    "IDF_TOOLS_PATH": "/opt/esp",
+    "REGISTRY_GITHUB_USERNAME": "${localEnv:REGISTRY_GITHUB_USERNAME:filxxip}",
+    "REGISTRY_GITHUB_TOKEN": "${localEnv:REGISTRY_GITHUB_TOKEN}"
   },
   "postCreateCommand": "bash -c 'source /opt/esp/idf/export.sh && pip install -r tools/ble/requirements.txt'",
   "workspaceFolder": "${localWorkspaceFolder}",

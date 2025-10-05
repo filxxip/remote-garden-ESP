@@ -3,9 +3,16 @@ VERSION ?= latest
 BUILD_DATE := $(shell date +%Y%m%d-%H%M%S)
 COMMIT_HASH := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
-GITHUB_USER ?= $(shell echo $$REGISTRY_GITHUB_USER)
-GITHUB_TOKEN ?= $(shell echo $$REGISTRY_GITHUB_TOKEN)
+# Detect CI/CD environment
+IS_CI := $(if $(CI),true,false)
+IS_GITHUB_ACTIONS := $(if $(GITHUB_ACTIONS),true,false)
+IS_GITLAB_CI := $(if $(GITLAB_CI),true,false)
+
+# GitHub configuration
 GITHUB_REPO ?= $(shell git remote get-url origin 2>/dev/null | sed 's/.*github.com[:/]\(.*\)\.git/\1/' || echo "owner/repo")
+
+# GitHub CLI is required for uploads
+GH_CLI := $(shell command -v gh 2>/dev/null)
 
 BUILD_DIR := build
 RELEASE_DIR := release
@@ -19,29 +26,41 @@ APP_MAP := $(BUILD_DIR)/$(PROJECT_NAME).map
 
 ARCHIVE_NAME := $(PROJECT_NAME)-$(VERSION)-$(BUILD_DATE).tar.gz
 
-.PHONY: help build clean fullclean flash monitor package upload release info setup
+.PHONY: help build clean fullclean flash monitor package upload release info
 
 help:
-	@echo "ESP32 Firmware Build & Deploy"
+	@echo "ESP32 Firmware Build & Deploy (Local & CI/CD)"
 	@echo ""
 	@echo "Available commands:"
 	@echo "  make build      - Build firmware"
 	@echo "  make clean      - Clean build"
 	@echo "  make fullclean  - Full clean"
-	@echo "  make flash      - Flash ESP32"
-	@echo "  make monitor    - Run monitor"
+	@echo "  make flash      - Flash ESP32 (local only)"
+	@echo "  make monitor    - Run monitor (local only)"
 	@echo "  make package    - Package firmware"
-	@echo "  make upload        - Upload to GitHub Packages"
+	@echo "  make upload     - Upload to GitHub (requires gh CLI)"
 	@echo "  make release    - Full release (build + package + upload)"
 	@echo "  make info       - Show build info"
 	@echo ""
+	@echo "Environment:"
+	@echo "  CI/CD Mode:     $(IS_CI)"
+	@echo "  GitHub Actions: $(IS_GITHUB_ACTIONS)"
+	@echo "  GitLab CI:      $(IS_GITLAB_CI)"
+	@echo "  Has gh CLI:     $(if $(GH_CLI),yes ($(GH_CLI)),no - install required!)"
+	@echo ""
 	@echo "Variables:"
-	@echo "  GITHUB_REPO    = $(GITHUB_REPO)"
-	@echo "  VERSION        = $(VERSION)"
+	@echo "  GITHUB_REPO     = $(GITHUB_REPO)"
+	@echo "  VERSION         = $(VERSION)"
 
 build:
 	@echo "==> Building firmware..."
+ifeq ($(IS_CI),true)
+	@echo "CI/CD mode detected - using direct idf.py"
+	@idf.py build
+else
+	@echo "Local mode detected - sourcing ESP-IDF environment"
 	@. $(IDF_PATH)/export.sh && idf.py build
+endif
 
 clean:
 	idf.py clean
@@ -51,10 +70,20 @@ fullclean:
 	rm -rf $(RELEASE_DIR)
 
 flash:
+ifeq ($(IS_CI),true)
+	@echo "ERROR: Flash not available in CI/CD environment"
+	@exit 1
+else
 	idf.py flash
+endif
 
 monitor:
+ifeq ($(IS_CI),true)
+	@echo "ERROR: Monitor not available in CI/CD environment"
+	@exit 1
+else
 	idf.py monitor
+endif
 
 package: build
 	@echo "==> Creating package..."
@@ -69,7 +98,12 @@ package: build
 	@echo "Version: $(VERSION)" >> $(ARTIFACTS_DIR)/build_info.txt
 	@echo "Build Date: $(BUILD_DATE)" >> $(ARTIFACTS_DIR)/build_info.txt
 	@echo "Commit: $(COMMIT_HASH)" >> $(ARTIFACTS_DIR)/build_info.txt
+	@echo "CI/CD: $(IS_CI)" >> $(ARTIFACTS_DIR)/build_info.txt
+ifeq ($(IS_CI),true)
+	@echo "IDF Version: $$(idf.py --version 2>/dev/null | head -n1)" >> $(ARTIFACTS_DIR)/build_info.txt
+else
 	@echo "IDF Version: $$(. $(IDF_PATH)/export.sh && idf.py --version 2>/dev/null | head -n1)" >> $(ARTIFACTS_DIR)/build_info.txt
+endif
 	@echo '#!/bin/bash' > $(ARTIFACTS_DIR)/flash.sh
 	@echo 'PORT=$${1:-/dev/ttyUSB0}' >> $(ARTIFACTS_DIR)/flash.sh
 	@echo 'esptool.py --chip esp32 --port $$PORT --baud 921600 \\' >> $(ARTIFACTS_DIR)/flash.sh
@@ -79,8 +113,10 @@ package: build
 	@echo '  0x8000 partition-table.bin \\' >> $(ARTIFACTS_DIR)/flash.sh
 	@echo '  0x10000 $(PROJECT_NAME).bin' >> $(ARTIFACTS_DIR)/flash.sh
 	@chmod +x $(ARTIFACTS_DIR)/flash.sh
-	@echo "" >> $(ARTIFACTS_DIR)/README.md
+	@echo "" > $(ARTIFACTS_DIR)/README.md
 	@echo "# ESP32 Firmware $(VERSION)" >> $(ARTIFACTS_DIR)/README.md
+	@echo "" >> $(ARTIFACTS_DIR)/README.md
+	@echo "Build: $(BUILD_DATE) | Commit: $(COMMIT_HASH)" >> $(ARTIFACTS_DIR)/README.md
 	@echo "" >> $(ARTIFACTS_DIR)/README.md
 	@echo "## Flash Instructions" >> $(ARTIFACTS_DIR)/README.md
 	@echo "" >> $(ARTIFACTS_DIR)/README.md
@@ -92,42 +128,25 @@ package: build
 	@ls -lh $(RELEASE_DIR)/$(ARCHIVE_NAME)
 
 upload: package
-	@echo "==> Uploading to GitHub Release..."
-	@if [ -z "$(GITHUB_TOKEN)" ]; then \
-		echo "ERROR: Set GITHUB_TOKEN environment variable"; \
-		exit 1; \
-	fi
-	@echo "Creating/updating tag $(VERSION)..."
-	@git tag -f -a $(VERSION) -m "Release $(VERSION) - Build $(BUILD_DATE)"
-	@git push origin $(VERSION) -f
-	@echo "Checking for existing release..."
-	@EXISTING_RELEASE_ID=$$(curl -s -H "Authorization: Bearer $(GITHUB_TOKEN)" \
-		"https://api.github.com/repos/$(GITHUB_REPO)/releases/tags/$(VERSION)" \
-		| sed -n 's/.*"id": *\([0-9][0-9]*\).*/\1/p' | head -1); \
-	if [ -n "$$EXISTING_RELEASE_ID" ]; then \
-		echo "Deleting existing release ID: $$EXISTING_RELEASE_ID"; \
-		curl -s -X DELETE \
-			-H "Authorization: Bearer $(GITHUB_TOKEN)" \
-			"https://api.github.com/repos/$(GITHUB_REPO)/releases/$$EXISTING_RELEASE_ID"; \
-	fi
-	@echo "Creating new release $(VERSION)..."
-	@RELEASE_ID=$$(curl -s -X POST \
-		-H "Authorization: Bearer $(GITHUB_TOKEN)" \
-		-H "Content-Type: application/json" \
-		-d "{\"tag_name\":\"$(VERSION)\",\"name\":\"Release $(VERSION)\",\"body\":\"Firmware build $(BUILD_DATE) - Commit $(COMMIT_HASH)\"}" \
-		"https://api.github.com/repos/$(GITHUB_REPO)/releases" \
-		| sed -n 's/.*"id": *\([0-9][0-9]*\).*/\1/p' | head -1); \
-	if [ -z "$$RELEASE_ID" ]; then \
-		echo "ERROR: Could not create release"; \
-		exit 1; \
-	fi; \
-	echo "Release ID: $$RELEASE_ID"; \
-	echo "Uploading $(ARCHIVE_NAME)..."; \
-	curl -X POST \
-		-H "Authorization: Bearer $(GITHUB_TOKEN)" \
-		-H "Content-Type: application/gzip" \
-		--data-binary @$(RELEASE_DIR)/$(ARCHIVE_NAME) \
-		"https://uploads.github.com/repos/$(GITHUB_REPO)/releases/$$RELEASE_ID/assets?name=$(ARCHIVE_NAME)"
+	@echo "==> Uploading to GitHub using gh CLI..."
+ifndef GH_CLI
+	@echo "ERROR: GitHub CLI (gh) is not installed!"
+	@exit 1
+endif
+	@echo "Checking authentication..."
+	@gh auth status >/dev/null 2>&1 || (echo "ERROR: Not authenticated. Run: gh auth login" && exit 1)
+	@echo "Checking for existing release $(VERSION)..."
+	@gh release delete $(VERSION) --repo $(GITHUB_REPO) --yes 2>/dev/null || true
+	@echo "Creating/updating release $(VERSION)..."
+	@gh release create $(VERSION) \
+		$(RELEASE_DIR)/$(ARCHIVE_NAME) \
+		--repo $(GITHUB_REPO) \
+		--title "Release $(VERSION)" \
+		--notes "Firmware build $(BUILD_DATE) - Commit $(COMMIT_HASH)" \
+		2>/dev/null || \
+	gh release upload $(VERSION) $(RELEASE_DIR)/$(ARCHIVE_NAME) \
+		--repo $(GITHUB_REPO) \
+		--clobber
 	@echo ""
 	@echo "==> Upload complete!"
 	@echo "View at: https://github.com/$(GITHUB_REPO)/releases/tag/$(VERSION)"
@@ -143,23 +162,13 @@ info:
 	@echo "Commit:       $(COMMIT_HASH)"
 	@echo "Archive:      $(ARCHIVE_NAME)"
 	@echo ""
-	@echo "=== GitHub Packages ==="
+	@echo "=== Environment ==="
+	@echo "CI/CD:        $(IS_CI)"
+	@echo "GitHub Actions: $(IS_GITHUB_ACTIONS)"
+	@echo "GitLab CI:    $(IS_GITLAB_CI)"
+	@echo "Has gh CLI:   $(if $(GH_CLI),yes ($(GH_CLI)),no)"
+	@echo ""
+	@echo "=== GitHub ==="
 	@echo "Repository:   $(GITHUB_REPO)"
-	@echo "Package URL:  https://maven.pkg.github.com/$(GITHUB_REPO)/esp32-firmware/$(VERSION)/$(ARCHIVE_NAME)"
+	@echo "Release URL:  https://github.com/$(GITHUB_REPO)/releases/tag/$(VERSION)"
 
-setup:
-	@echo "Setup instructions:"
-	@echo ""
-	@echo "1. Create GitHub Personal Access Token:"
-	@echo "   https://github.com/settings/tokens"
-	@echo "   Required scopes: repo, write:packages"
-	@echo ""
-	@echo "2. Add to ~/.bashrc or ~/.zshrc:"
-	@echo ""
-	@echo 'export GITHUB_TOKEN="ghp_xxxxxxxxxxxxx"'
-	@echo ""
-	@echo "3. Install GitHub CLI (if not installed):"
-	@echo "   brew install gh          # macOS"
-	@echo "   sudo apt install gh      # Ubuntu/Debian"
-	@echo ""
-	@echo "4. Run: source ~/.bashrc"

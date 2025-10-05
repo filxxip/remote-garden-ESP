@@ -4,6 +4,7 @@ RUN apt-get update && apt-get install -y \
     git \
     vim \
     bluez \
+    gh \
     && rm -rf /var/lib/apt/lists/*
 
 RUN /opt/esp/idf/install.sh esp32

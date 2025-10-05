@@ -97,26 +97,28 @@ upload: package
 		echo "ERROR: Set GITHUB_TOKEN environment variable"; \
 		exit 1; \
 	fi
-	@echo "Creating tag $(VERSION)..."
-	git tag -a $(VERSION) -m "Release $(VERSION)" || true
-	@echo "Pushing tag $(VERSION)..."
-	git push origin $(VERSION)
-	@echo "Getting/creating release $(VERSION)..."
-	@RESPONSE=$$(curl -s -H "Authorization: Bearer $(GITHUB_TOKEN)" \
-		"https://api.github.com/repos/$(GITHUB_REPO)/releases/tags/$(VERSION)"); \
-	RELEASE_ID=$$(echo "$$RESPONSE" | sed -n 's/.*"id": *\([0-9][0-9]*\).*/\1/p' | head -1); \
-	if [ -z "$$RELEASE_ID" ]; then \
-		echo "Creating new release $(VERSION)..."; \
-		RESPONSE=$$(curl -s -X POST \
+	@echo "Creating/updating tag $(VERSION)..."
+	@git tag -f -a $(VERSION) -m "Release $(VERSION) - Build $(BUILD_DATE)"
+	@git push origin $(VERSION) -f
+	@echo "Checking for existing release..."
+	@EXISTING_RELEASE_ID=$$(curl -s -H "Authorization: Bearer $(GITHUB_TOKEN)" \
+		"https://api.github.com/repos/$(GITHUB_REPO)/releases/tags/$(VERSION)" \
+		| sed -n 's/.*"id": *\([0-9][0-9]*\).*/\1/p' | head -1); \
+	if [ -n "$$EXISTING_RELEASE_ID" ]; then \
+		echo "Deleting existing release ID: $$EXISTING_RELEASE_ID"; \
+		curl -s -X DELETE \
 			-H "Authorization: Bearer $(GITHUB_TOKEN)" \
-			-H "Content-Type: application/json" \
-			-d '{"tag_name":"$(VERSION)","name":"Release $(VERSION)","body":"Firmware build $(BUILD_DATE) - Commit $(COMMIT_HASH)","draft":false,"prerelease":false}' \
-			"https://api.github.com/repos/$(GITHUB_REPO)/releases"); \
-		RELEASE_ID=$$(echo "$$RESPONSE" | sed -n 's/.*"id": *\([0-9][0-9]*\).*/\1/p' | head -1); \
-	fi; \
+			"https://api.github.com/repos/$(GITHUB_REPO)/releases/$$EXISTING_RELEASE_ID"; \
+	fi
+	@echo "Creating new release $(VERSION)..."
+	@RELEASE_ID=$$(curl -s -X POST \
+		-H "Authorization: Bearer $(GITHUB_TOKEN)" \
+		-H "Content-Type: application/json" \
+		-d "{\"tag_name\":\"$(VERSION)\",\"name\":\"Release $(VERSION)\",\"body\":\"Firmware build $(BUILD_DATE) - Commit $(COMMIT_HASH)\"}" \
+		"https://api.github.com/repos/$(GITHUB_REPO)/releases" \
+		| sed -n 's/.*"id": *\([0-9][0-9]*\).*/\1/p' | head -1); \
 	if [ -z "$$RELEASE_ID" ]; then \
-		echo "ERROR: Failed to get release ID. Response:"; \
-		echo "$$RESPONSE"; \
+		echo "ERROR: Could not create release"; \
 		exit 1; \
 	fi; \
 	echo "Release ID: $$RELEASE_ID"; \

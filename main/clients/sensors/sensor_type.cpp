@@ -11,6 +11,7 @@ const std::unordered_map<SensorType, std::string> sensorToStr{
     {SensorType::AirTemperature, "air_temperature"},
     {SensorType::SignalStrength, "signal_strenght"},
     {SensorType::Battery, "battery"},
+    {SensorType::Camera, "camera"},
 };
 
 const std::unordered_map<std::string, SensorType> strToSensor =

@@ -55,6 +55,7 @@ extern "C" void app_main(void) {
         sensorFactory.create(SensorType::AirTemperature, mqtt, wifi),
         sensorFactory.create(SensorType::Battery, mqtt, wifi),
         sensorFactory.create(SensorType::SignalStrength, mqtt, wifi),
+        sensorFactory.create(SensorType::Camera, mqtt, wifi),
     };
 
     std::array<std::shared_ptr<PollingManager>, 2> sensorManagers = {

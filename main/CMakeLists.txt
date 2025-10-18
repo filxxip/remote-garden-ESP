@@ -13,6 +13,10 @@ idf_component_register(
         clients/actuators/clients/mock_actuator_client.cpp
         clients/actuators/factory/actuator_factory.cpp
 
+        clients/sensors/clients/camera_client/real/camera_client_real.cpp
+        clients/sensors/clients/camera_client/camera_client.cpp
+        clients/sensors/clients/camera_client/mock/camera_client_mock.cpp
+
         clients/sensors/clients/adc_sensor_client.cpp
         clients/sensors/clients/sensor_client.cpp
 

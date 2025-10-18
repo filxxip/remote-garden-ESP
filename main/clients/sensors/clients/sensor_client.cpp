@@ -11,7 +11,7 @@ constexpr const char* TAG = "SensorClient";
 
 SensorClient::SensorClient(std::shared_ptr<MqttClient> mqttClient,
                            const SensorType type)
-    : sensorType(type), mqtt(std::move(mqttClient)), topic("device/sensor") {}
+    : mqtt(std::move(mqttClient)), sensorType(type), topic("device/sensor") {}
 
 void SensorClient::storeReading() {
     auto value = readValue();

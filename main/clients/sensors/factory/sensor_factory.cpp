@@ -6,6 +6,8 @@
 #include "clients/sensors/clients/air_humidity_client/real/air_humidity_client_real.hpp"
 #include "clients/sensors/clients/battery_client/mock/battery_sensor_client_mock.hpp"
 #include "clients/sensors/clients/battery_client/real/battery_sensor_client_real.hpp"
+#include "clients/sensors/clients/camera_client/mock/camera_client_mock.hpp"
+#include "clients/sensors/clients/camera_client/real/camera_client_real.hpp"
 #include "clients/sensors/clients/light_client/mock/light_sensor_client_mock.hpp"
 #include "clients/sensors/clients/light_client/real/light_sensor_client_real.hpp"
 #include "clients/sensors/clients/signal_strength_client/mock/signal_strength_client_mock.hpp"
@@ -42,6 +44,9 @@ std::shared_ptr<SensorClient> MockSensorFactory::create(
             return std::make_shared<BatterySensorClientMock>(std::move(mqtt));
         case SensorType::SignalStrength:
             return std::make_shared<SignalStrengthClientMock>(std::move(mqtt));
+        case SensorType::Camera:
+            return std::make_shared<MockCameraSensorClient>(std::move(mqtt),
+                                                            type);
         default:
             return nullptr;
     }
@@ -50,6 +55,11 @@ std::shared_ptr<SensorClient> MockSensorFactory::create(
 std::shared_ptr<SensorClient> AdcSensorFactory::create(
     const SensorType type, std::shared_ptr<MqttClient> mqtt,
     std::shared_ptr<WifiManager> wifi) const {
+    // Camera doesn't use ADC, handle separately
+    if (type == SensorType::Camera) {
+        return std::make_shared<CameraSensorClient>(std::move(mqtt), type);
+    }
+
     auto it = adcConfig.find(type);
     if (it == adcConfig.end()) return nullptr;
 

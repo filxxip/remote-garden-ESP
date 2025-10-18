@@ -13,16 +13,16 @@ class SensorClient {
     virtual ~SensorClient() = default;
 
     void storeReading();
-    void flushCache();
+    virtual void flushCache();
 
    protected:
     virtual float readValue() = 0;
 
    protected:
+    std::shared_ptr<MqttClient> mqtt;
     SensorType sensorType;
 
    private:
-    std::shared_ptr<MqttClient> mqtt;
     std::string topic;
     std::vector<float> cache;
 };

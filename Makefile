@@ -29,13 +29,13 @@ ARCHIVE_NAME := $(PROJECT_NAME)-$(VERSION)-$(BUILD_DATE).tar.gz
 .PHONY: help build clean fullclean flash monitor package upload release info
 
 help:
-	@echo "ESP32 Firmware Build & Deploy (Local & CI/CD)"
+	@echo "ESP32-S3 Firmware Build & Deploy (Local & CI/CD)"
 	@echo ""
 	@echo "Available commands:"
 	@echo "  make build      - Build firmware"
 	@echo "  make clean      - Clean build"
 	@echo "  make fullclean  - Full clean"
-	@echo "  make flash      - Flash ESP32 (local only)"
+	@echo "  make flash      - Flash ESP32-S3 (local only)"
 	@echo "  make monitor    - Run monitor (local only)"
 	@echo "  make package    - Package firmware"
 	@echo "  make upload     - Upload to GitHub (requires gh CLI)"
@@ -53,7 +53,7 @@ help:
 	@echo "  VERSION         = $(VERSION)"
 
 build:
-	@echo "==> Building firmware..."
+	@echo "==> Building firmware for ESP32-S3..."
 ifeq ($(IS_CI),true)
 	@echo "CI/CD mode detected - using direct idf.py"
 	@idf.py build
@@ -86,7 +86,7 @@ else
 endif
 
 package: build
-	@echo "==> Creating package..."
+	@echo "==> Creating package for ESP32-S3..."
 	@mkdir -p $(ARTIFACTS_DIR)
 	@cp $(BOOTLOADER) $(ARTIFACTS_DIR)/ 2>/dev/null || true
 	@cp $(PARTITION_TABLE) $(ARTIFACTS_DIR)/ 2>/dev/null || true
@@ -95,6 +95,7 @@ package: build
 	@cp $(APP_MAP) $(ARTIFACTS_DIR)/ 2>/dev/null || true
 	@find $(BUILD_DIR) -maxdepth 1 -name "*.bin" -exec cp {} $(ARTIFACTS_DIR)/ \;
 	@echo "Project: $(PROJECT_NAME)" > $(ARTIFACTS_DIR)/build_info.txt
+	@echo "Chip: ESP32-S3" >> $(ARTIFACTS_DIR)/build_info.txt
 	@echo "Version: $(VERSION)" >> $(ARTIFACTS_DIR)/build_info.txt
 	@echo "Build Date: $(BUILD_DATE)" >> $(ARTIFACTS_DIR)/build_info.txt
 	@echo "Commit: $(COMMIT_HASH)" >> $(ARTIFACTS_DIR)/build_info.txt
@@ -105,16 +106,19 @@ else
 	@echo "IDF Version: $$(. $(IDF_PATH)/export.sh && idf.py --version 2>/dev/null | head -n1)" >> $(ARTIFACTS_DIR)/build_info.txt
 endif
 	@echo '#!/bin/bash' > $(ARTIFACTS_DIR)/flash.sh
+	@echo '# Flash script for ESP32-S3' >> $(ARTIFACTS_DIR)/flash.sh
 	@echo 'PORT=$${1:-/dev/ttyUSB0}' >> $(ARTIFACTS_DIR)/flash.sh
-	@echo 'esptool.py --chip esp32 --port $$PORT --baud 921600 \\' >> $(ARTIFACTS_DIR)/flash.sh
-	@echo '  --before default_reset --after hard_reset write_flash -z \\' >> $(ARTIFACTS_DIR)/flash.sh
+	@echo 'esptool.py --chip esp32s3 --port $$PORT --baud 460800 \\' >> $(ARTIFACTS_DIR)/flash.sh
+	@echo '  --before default_reset --after hard_reset write_flash \\' >> $(ARTIFACTS_DIR)/flash.sh
 	@echo '  --flash_mode dio --flash_freq 40m --flash_size detect \\' >> $(ARTIFACTS_DIR)/flash.sh
-	@echo '  0x1000 bootloader.bin \\' >> $(ARTIFACTS_DIR)/flash.sh
+	@echo '  0x0 bootloader.bin \\' >> $(ARTIFACTS_DIR)/flash.sh
 	@echo '  0x8000 partition-table.bin \\' >> $(ARTIFACTS_DIR)/flash.sh
-	@echo '  0x10000 $(PROJECT_NAME).bin' >> $(ARTIFACTS_DIR)/flash.sh
+	@echo '  0x20000 $(PROJECT_NAME).bin' >> $(ARTIFACTS_DIR)/flash.sh
 	@chmod +x $(ARTIFACTS_DIR)/flash.sh
 	@echo "" > $(ARTIFACTS_DIR)/README.md
-	@echo "# ESP32 Firmware $(VERSION)" >> $(ARTIFACTS_DIR)/README.md
+	@echo "# ESP32-S3 Firmware $(VERSION)" >> $(ARTIFACTS_DIR)/README.md
+	@echo "" >> $(ARTIFACTS_DIR)/README.md
+	@echo "**Target:** ESP32-S3" >> $(ARTIFACTS_DIR)/README.md
 	@echo "" >> $(ARTIFACTS_DIR)/README.md
 	@echo "Build: $(BUILD_DATE) | Commit: $(COMMIT_HASH)" >> $(ARTIFACTS_DIR)/README.md
 	@echo "" >> $(ARTIFACTS_DIR)/README.md
@@ -122,6 +126,17 @@ endif
 	@echo "" >> $(ARTIFACTS_DIR)/README.md
 	@echo "\`\`\`bash" >> $(ARTIFACTS_DIR)/README.md
 	@echo "./flash.sh /dev/ttyUSB0" >> $(ARTIFACTS_DIR)/README.md
+	@echo "\`\`\`" >> $(ARTIFACTS_DIR)/README.md
+	@echo "" >> $(ARTIFACTS_DIR)/README.md
+	@echo "## Manual Flash" >> $(ARTIFACTS_DIR)/README.md
+	@echo "" >> $(ARTIFACTS_DIR)/README.md
+	@echo "\`\`\`bash" >> $(ARTIFACTS_DIR)/README.md
+	@echo "esptool.py --chip esp32s3 --port /dev/ttyUSB0 --baud 460800 \\" >> $(ARTIFACTS_DIR)/README.md
+	@echo "  --before default_reset --after hard_reset write_flash \\" >> $(ARTIFACTS_DIR)/README.md
+	@echo "  --flash_mode dio --flash_freq 40m --flash_size detect \\" >> $(ARTIFACTS_DIR)/README.md
+	@echo "  0x0 bootloader.bin \\" >> $(ARTIFACTS_DIR)/README.md
+	@echo "  0x8000 partition-table.bin \\" >> $(ARTIFACTS_DIR)/README.md
+	@echo "  0x20000 $(PROJECT_NAME).bin" >> $(ARTIFACTS_DIR)/README.md
 	@echo "\`\`\`" >> $(ARTIFACTS_DIR)/README.md
 	@cd $(RELEASE_DIR) && tar -czf $(ARCHIVE_NAME) $(PROJECT_NAME)-$(VERSION)-$(BUILD_DATE)
 	@echo "==> Package created: $(RELEASE_DIR)/$(ARCHIVE_NAME)"
@@ -141,8 +156,8 @@ endif
 	@gh release create $(VERSION) \
 		$(RELEASE_DIR)/$(ARCHIVE_NAME) \
 		--repo $(GITHUB_REPO) \
-		--title "Release $(VERSION)" \
-		--notes "Firmware build $(BUILD_DATE) - Commit $(COMMIT_HASH)" \
+		--title "Release $(VERSION) - ESP32-S3" \
+		--notes "ESP32-S3 Firmware build $(BUILD_DATE) - Commit $(COMMIT_HASH)" \
 		2>/dev/null || \
 	gh release upload $(VERSION) $(RELEASE_DIR)/$(ARCHIVE_NAME) \
 		--repo $(GITHUB_REPO) \
@@ -157,6 +172,7 @@ release: fullclean build package upload
 info:
 	@echo "=== Build Info ==="
 	@echo "Project:      $(PROJECT_NAME)"
+	@echo "Chip:         ESP32-S3"
 	@echo "Version:      $(VERSION)"
 	@echo "Build Date:   $(BUILD_DATE)"
 	@echo "Commit:       $(COMMIT_HASH)"
@@ -171,4 +187,3 @@ info:
 	@echo "=== GitHub ==="
 	@echo "Repository:   $(GITHUB_REPO)"
 	@echo "Release URL:  https://github.com/$(GITHUB_REPO)/releases/tag/$(VERSION)"
-

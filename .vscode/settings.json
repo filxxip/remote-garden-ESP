@@ -4,7 +4,7 @@
     "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
     "idf.pythonInstallPath": "/usr/bin/python3",
     "idf.flashType": "UART",
-    "idf.port": "/dev/ttyUSB0",
+    "idf.port": "/dev/ttyACM0",
     "C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json",
     "files.associations": {
         "task.h": "c",

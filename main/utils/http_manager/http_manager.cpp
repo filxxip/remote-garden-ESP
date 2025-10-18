@@ -4,6 +4,7 @@
 #include <esp_log.h>
 #include <stdlib.h>
 
+#include "esp_crt_bundle.h"
 #include "utils/file_manager/file_manager.hpp"
 
 namespace {
@@ -70,6 +71,16 @@ bool HttpManager::performRequest(esp_http_client_method_t method,
     config.timeout_ms = 10000;
     config.buffer_size = 1024;
     config.buffer_size_tx = 1024;
+    config.max_redirection_count = 5;
+    config.disable_auto_redirect = false;
+
+    if (url.find("https://") == 0) {
+        config.transport_type = HTTP_TRANSPORT_OVER_SSL;
+        config.skip_cert_common_name_check = true;
+        config.use_global_ca_store = false;
+
+        config.crt_bundle_attach = NULL;  // ← KLUCZOWE!
+    }
 
     esp_http_client_handle_t client = esp_http_client_init(&config);
     if (!client) {

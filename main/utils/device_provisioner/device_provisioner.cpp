@@ -16,8 +16,8 @@ constexpr const char* CLIENT_CERT_PATH = "/littlefs/client.crt";
 constexpr const char* CA_CERT_PATH = "/littlefs/ca.crt";
 constexpr const char* USER_KEY_PATH = "/littlefs/user.txt";
 
-constexpr const char* SERVER_URL = "http://192.168.100.3:3000";
-constexpr const char* PATH = "/api/esp/register";
+constexpr const char* SERVER_URL = "https://192.168.100.3/api";
+constexpr const char* PATH = "/v1/esp/register";
 
 bool readFile(const char* path, std::string& out) {
     auto result = FileManager::readFromFile(path, out);

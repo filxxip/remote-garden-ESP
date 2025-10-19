@@ -46,15 +46,15 @@ extern "C" void app_main(void) {
     auto mqtt = std::make_shared<MqttClient>();
 
     MockActuatorFactory actuatorFactory;
-    MockSensorFactory sensorFactory;
+    AdcSensorFactory sensorFactory;
 
     std::vector<std::shared_ptr<SensorClient>> sensors = {
-        sensorFactory.create(SensorType::Light, mqtt, wifi),
-        sensorFactory.create(SensorType::AirHumidity, mqtt, wifi),
-        sensorFactory.create(SensorType::SoilMoisture, mqtt, wifi),
-        sensorFactory.create(SensorType::AirTemperature, mqtt, wifi),
-        sensorFactory.create(SensorType::Battery, mqtt, wifi),
-        sensorFactory.create(SensorType::SignalStrength, mqtt, wifi),
+        // sensorFactory.create(SensorType::Light, mqtt, wifi),
+        // sensorFactory.create(SensorType::AirHumidity, mqtt, wifi),
+        // sensorFactory.create(SensorType::SoilMoisture, mqtt, wifi),
+        // sensorFactory.create(SensorType::AirTemperature, mqtt, wifi),
+        // sensorFactory.create(SensorType::Battery, mqtt, wifi),
+        // sensorFactory.create(SensorType::SignalStrength, mqtt, wifi),
         sensorFactory.create(SensorType::Camera, mqtt, wifi),
     };
 
@@ -62,6 +62,7 @@ extern "C" void app_main(void) {
         std::make_shared<SensorReader>(sensors, 3000),
         std::make_shared<SensorPublisher>(sensors, 20000)};
     sensorManagers.at(0)->start();
+    // sensorManagers.at(0)->resume();
     sensorManagers.at(1)->start();
 
     mqtt->registerOnDisconnected([mqtt, &actuatorFactory, &sensorFactory,

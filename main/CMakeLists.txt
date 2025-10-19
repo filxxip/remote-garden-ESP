@@ -5,6 +5,8 @@ idf_component_register(
     SRCS
         main.cpp
 
+        dfrobot_axp313a/DFRobot_AXP313A.cpp
+
         bluetooth_manager/bluetooth_manager.cpp
 
         clients/actuators/actuator_type.cpp

@@ -67,12 +67,9 @@ void BaseCameraSensorClient::flushImages() {
     bool allSuccess = true;
     for (size_t i = 0; i < imageCache.size(); ++i) {
         const auto& image = imageCache[i];
-
-        std::string payload(reinterpret_cast<const char*>(image.data()),
-                            image.size());
         std::string topicWithIndex = imageTopic + "/" + std::to_string(i);
 
-        if (!mqtt->publish(topicWithIndex, payload)) {
+        if (!mqtt->publishRaw(topicWithIndex, image)) {
             ESP_LOGE(TAG, "Failed to publish image %zu", i);
             allSuccess = false;
         } else {

@@ -127,6 +127,38 @@ bool MqttClient::publish(const std::string& topic, const std::string& message) {
     return false;
 }
 
+bool MqttClient::publishRaw(const std::string& topic,
+                            const std::vector<uint8_t>& data) {
+    if (!topicPrefix.has_value()) {
+        ESP_LOGE(TAG, "Cannot publish because topic prefix is not defined");
+        return false;
+    }
+
+    const auto fullTopic = topicPrefix.value() + topic;
+
+    if (client) {
+        int msg_id = esp_mqtt_client_publish(
+            client, fullTopic.c_str(),
+            reinterpret_cast<const char*>(data.data()), data.size(),
+            1,  // qos = 1
+            0   // retain = false
+        );
+
+        if (msg_id >= 0) {
+            ESP_LOGI(TAG, "Published RAW message (%zu bytes) id %d to topic %s",
+                     data.size(), msg_id, fullTopic.c_str());
+            return true;
+        } else {
+            ESP_LOGE(TAG, "Failed to publish RAW message to topic %s (err=%d)",
+                     fullTopic.c_str(), msg_id);
+        }
+    } else {
+        ESP_LOGW(TAG, "MQTT client not initialized");
+    }
+
+    return false;
+}
+
 void MqttClient::registerOnConnected(
     std::function<void(MqttClient&)> callback) {
     onConnectedCallback = std::move(callback);

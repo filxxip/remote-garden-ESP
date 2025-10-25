@@ -83,7 +83,6 @@ esp_err_t Dht11Reader::readSensor(uint8_t data[5]) {
 
     return ESP_OK;
 }
-
 bool Dht11Reader::update() {
     uint8_t data[5] = {0};
 
@@ -92,12 +91,16 @@ bool Dht11Reader::update() {
     esp_err_t res = readSensor(data);
 
     if (res == ESP_OK) {
-        humidity = (float)data[0];
-        temperature = (float)data[2];
+        // DHT11: data[0] = wilgotność int, data[1] = wilgotność decimal
+        //        data[2] = temperatura int, data[3] = temperatura decimal
+        humidity = (float)data[0] + ((float)data[1] / 10.0f);
+        temperature = (float)data[2] + ((float)data[3] / 10.0f);
 
-        ESP_LOGI(
-            TAG, "DHT11 SUCCESS: Temp=%.1f°C Hum=%.1f%% [%d %d %d %d cs=%d]",
-            temperature, humidity, data[0], data[1], data[2], data[3], data[4]);
+        ESP_LOGI(TAG,
+                 "✓ DHT11 SUCCESS: Temp=%.1f°C Hum=%.1f%% [raw: %d.%d°C "
+                 "%d.%d%% cs=%d]",
+                 temperature, humidity, data[2], data[3], data[0], data[1],
+                 data[4]);
         return true;
     }
 

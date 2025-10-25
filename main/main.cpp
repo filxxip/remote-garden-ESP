@@ -51,21 +51,28 @@ extern "C" void app_main(void) {
     AdcSensorFactory sensorFactory;
 
     std::vector<std::shared_ptr<SensorClient>> sensors = {
-        sensorFactory.create(SensorType::Light, mqtt, dht, wifi),
-        sensorFactory.create(SensorType::AirHumidity, mqtt, dht, wifi),
-        sensorFactory.create(SensorType::SoilMoisture, mqtt, dht, wifi),
-        sensorFactory.create(SensorType::AirTemperature, mqtt, dht, wifi),
-        sensorFactory.create(SensorType::WaterLevel, mqtt, dht, wifi),
-        sensorFactory.create(SensorType::SignalStrength, mqtt, dht, wifi),
-        // sensorFactory.create(SensorType::Camera, mqtt, dht, wifi),
+        // sensorFactory.create(SensorType::Light, mqtt, dht, wifi),
+        // sensorFactory.create(SensorType::AirHumidity, mqtt, dht, wifi),
+        // sensorFactory.create(SensorType::SoilMoisture, mqtt, dht, wifi),
+        // sensorFactory.create(SensorType::AirTemperature, mqtt, dht, wifi),
+        // sensorFactory.create(SensorType::WaterLevel, mqtt, dht, wifi),
+        // sensorFactory.create(SensorType::SignalStrength, mqtt, dht, wifi),
+    };
+    std::vector<std::shared_ptr<SensorClient>> camSensors = {
+        sensorFactory.create(SensorType::Camera, mqtt, dht, wifi),
     };
 
-    std::array<std::shared_ptr<PollingManager>, 2> sensorManagers = {
+    std::array<std::shared_ptr<PollingManager>, 4> sensorManagers = {
         std::make_shared<SensorReader>(sensors, 3000),
-        std::make_shared<SensorPublisher>(sensors, 20000)};
+        std::make_shared<SensorPublisher>(sensors, 20000),
+        std::make_shared<SensorReader>(camSensors, 2000),
+        std::make_shared<SensorPublisher>(camSensors, 3000)};
+
     sensorManagers.at(0)->start();
     // sensorManagers.at(0)->resume();
     sensorManagers.at(1)->start();
+    sensorManagers.at(2)->start();
+    sensorManagers.at(3)->start();
 
     mqtt->registerOnDisconnected([mqtt, &actuatorFactory, &sensorFactory,
                                   &sensorManagers, wifi](MqttClient& client) {
@@ -85,6 +92,7 @@ extern "C" void app_main(void) {
                 manager->resume();
             }
         }
+
         // auto atomize = actuatorFactory.create(ActuatorType::Atomize, mqtt);
         auto fan = actuatorFactory.create(ActuatorType::Fan, mqtt);
         // auto heating = actuatorFactory.create(ActuatorType::HeatingMat,

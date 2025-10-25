@@ -11,7 +11,7 @@ constexpr const char* TAG = "ResumeHandler";
 }
 
 ResumeHandler::ResumeHandler(
-    std::array<std::shared_ptr<PollingManager>, 2> sensors)
+    std::array<std::shared_ptr<PollingManager>, 4> sensors)
     : sensors(std::move(sensors)) {}
 
 void ResumeHandler::operate(const std::string& topic,

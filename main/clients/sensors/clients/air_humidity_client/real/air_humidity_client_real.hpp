@@ -1,13 +1,16 @@
 #pragma once
 
-#include "clients/sensors/clients/adc_sensor_client.hpp"
+#include "../../dht_11_client.hpp"
+#include "../../sensor_client.hpp"
 
-class AirHumidityClientReal final : public AdcSensorClient {
+class AirHumidityClientReal final : public SensorClient {
    public:
     AirHumidityClientReal(std::shared_ptr<MqttClient> mqttClient,
-                          const adc_unit_t adcUnit,
-                          const adc_channel_t adcChannel);
+                          std::shared_ptr<Dht11Reader> dht);
 
    protected:
-    float convertRawToValue(int raw) const override;
+    float readValue() override;
+
+   private:
+    std::shared_ptr<Dht11Reader> dhtReader;
 };

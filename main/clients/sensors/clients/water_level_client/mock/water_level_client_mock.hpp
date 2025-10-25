@@ -2,9 +2,9 @@
 
 #include "clients/sensors/clients/sensor_client.hpp"
 
-class BatterySensorClientMock final : public SensorClient {
+class WaterLevelClientMock final : public SensorClient {
    public:
-    BatterySensorClientMock(std::shared_ptr<MqttClient> mqttClient);
+    WaterLevelClientMock(std::shared_ptr<MqttClient> mqttClient);
 
    protected:
     float readValue() override;

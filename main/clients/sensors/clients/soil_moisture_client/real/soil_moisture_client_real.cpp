@@ -1,13 +1,23 @@
 #include "soil_moisture_client_real.hpp"
 
-#include "clients/sensors/sensor_type.hpp"
+#include "esp_log.h"
+
+namespace {
+const char* TAG = "SoilMoistureClientReal";
+}
 
 SoilMoistureClientReal::SoilMoistureClientReal(
-    std::shared_ptr<MqttClient> mqttClient, const adc_unit_t adcUnit,
-    const adc_channel_t adcChannel)
-    : AdcSensorClient(std::move(mqttClient), SensorType::SoilMoisture, adcUnit,
-                      adcChannel) {}
+    std::shared_ptr<MqttClient> mqttClient, adc1_channel_t channel)
+    : SensorClient(std::move(mqttClient), SensorType::SoilMoisture),
+      adcChannel(channel) {
+    adc1_config_width(ADC_WIDTH_BIT_12);
+    adc1_config_channel_atten(adcChannel, ADC_ATTEN_DB_11);
+    ESP_LOGI(TAG, "Soil moisture sensor on ADC channel %d", adcChannel);
+}
 
-float SoilMoistureClientReal::convertRawToValue(const int raw) const {
-    return (static_cast<float>(raw) / 4095.0f) * 100.0f;
+float SoilMoistureClientReal::readValue() {
+    int raw = adc1_get_raw(adcChannel);
+    float percent = 100.0f - ((raw / 4095.0f) * 100.0f);
+    ESP_LOGI(TAG, "Soil moisture: %.2f%% (raw=%d)", percent, raw);
+    return percent;
 }

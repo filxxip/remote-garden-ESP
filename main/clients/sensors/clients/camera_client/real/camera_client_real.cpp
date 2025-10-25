@@ -2,7 +2,6 @@
 
 #include <esp_log.h>
 
-#include "dfrobot_axp313a/DFRobot_AXP313A.h"
 #include "driver/i2c.h"
 #include "esp_camera.h"
 

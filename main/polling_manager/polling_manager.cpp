@@ -18,7 +18,7 @@ PollingManager::~PollingManager() {
 }
 
 void PollingManager::start() {
-    xTaskCreatePinnedToCore(pollingTask, "PollingTask", 4096, this, 5,
+    xTaskCreatePinnedToCore(pollingTask, "PollingTask", 8192, this, 5,
                             &taskHandle, tskNO_AFFINITY);
 }
 

@@ -12,4 +12,7 @@ class CameraSensorClient : public BaseCameraSensorClient {
     bool captureImage(std::vector<uint8_t>& outImage) override;
     bool initializeCamera() override;
     void cleanupCamera() override;
+    void scanI2CBus();
+    void readCameraSensorID();
+    bool enableCameraPower();
 };

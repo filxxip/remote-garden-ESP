@@ -8,9 +8,9 @@
 
 class ResumeHandler final : public MqttEventHandler {
    public:
-    ResumeHandler(std::array<std::shared_ptr<PollingManager>, 2> sensors);
+    ResumeHandler(std::array<std::shared_ptr<PollingManager>, 4> sensors);
     void operate(const std::string& topic, const std::string& payload) override;
 
    private:
-    std::array<std::shared_ptr<PollingManager>, 2> sensors;
+    std::array<std::shared_ptr<PollingManager>, 4> sensors;
 };

@@ -1,3 +1,19 @@
 dependencies:
-  joltwallet/littlefs: ==1.20.1
+  joltwallet/littlefs: "==1.20.1"
   espressif/esp32-camera: "^2.0.0"
+
+  # esp_idf_lib_helpers:
+  #   git: "https://github.com/UncleRus/esp-idf-lib.git"
+  #   path: "components/esp_idf_lib_helpers"
+
+  # i2cdev:
+  #   git: "https://github.com/UncleRus/esp-idf-lib.git"
+  #   path: "components/i2cdev"
+
+  # bh1750:
+  #   git: "https://github.com/UncleRus/esp-idf-lib.git"
+  #   path: "components/bh1750"
+
+  # dht:
+  #   git: "https://github.com/UncleRus/esp-idf-lib.git"
+  #   path: "components/dht"

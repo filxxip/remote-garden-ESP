@@ -1,13 +1,24 @@
 #pragma once
 
-#include "clients/sensors/clients/adc_sensor_client.hpp"
+#include "../../sensor_client.hpp"
+#include "driver/i2c.h"
 
-class LightSensorClientReal final : public AdcSensorClient {
+class LightSensorClientReal : public SensorClient {
    public:
     LightSensorClientReal(std::shared_ptr<MqttClient> mqttClient,
-                          const adc_unit_t adcUnit,
-                          const adc_channel_t adcChannel);
+                          i2c_port_t i2cPort, gpio_num_t sdaPin,
+                          gpio_num_t sclPin);
+
+    ~LightSensorClientReal();
 
    protected:
-    float convertRawToValue(const int raw) const override;
+    float readValue() override;
+
+   private:
+    i2c_port_t port;
+    uint8_t address;
+    bool i2c_initialized;
+
+    esp_err_t writeCommand(uint8_t cmd);
+    esp_err_t readLightLevel(uint16_t* lux);
 };

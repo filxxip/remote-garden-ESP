@@ -10,7 +10,7 @@ const std::unordered_map<SensorType, std::string> sensorToStr{
     {SensorType::SoilMoisture, "soil_moisture"},
     {SensorType::AirTemperature, "air_temperature"},
     {SensorType::SignalStrength, "signal_strenght"},
-    {SensorType::Battery, "battery"},
+    {SensorType::WaterLevel, "water_level"},
     {SensorType::Camera, "camera"},
 };
 

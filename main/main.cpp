@@ -5,6 +5,7 @@
 
 #include "bluetooth_manager/bluetooth_manager.hpp"
 #include "clients/actuators/factory/actuator_factory.hpp"
+#include "clients/sensors/clients/dht_11_client.hpp"
 #include "clients/sensors/factory/sensor_factory.hpp"
 #include "credentials_receiver/credentials_receiver.hpp"
 #include "mqtt/handlers/device_control_handler/device_control_handler.hpp"
@@ -44,25 +45,34 @@ extern "C" void app_main(void) {
     wifi->init();
 
     auto mqtt = std::make_shared<MqttClient>();
+    auto dht = std::make_shared<Dht11Reader>(GPIO_NUM_14);
 
-    MockActuatorFactory actuatorFactory;
-    MockSensorFactory sensorFactory;
+    GpioActuatorFactory actuatorFactory;
+    AdcSensorFactory sensorFactory;
 
     std::vector<std::shared_ptr<SensorClient>> sensors = {
-        sensorFactory.create(SensorType::Light, mqtt, wifi),
-        sensorFactory.create(SensorType::AirHumidity, mqtt, wifi),
-        sensorFactory.create(SensorType::SoilMoisture, mqtt, wifi),
-        sensorFactory.create(SensorType::AirTemperature, mqtt, wifi),
-        sensorFactory.create(SensorType::Battery, mqtt, wifi),
-        sensorFactory.create(SensorType::SignalStrength, mqtt, wifi),
-        sensorFactory.create(SensorType::Camera, mqtt, wifi),
+        // sensorFactory.create(SensorType::Light, mqtt, dht, wifi),
+        // sensorFactory.create(SensorType::AirHumidity, mqtt, dht, wifi),
+        // sensorFactory.create(SensorType::SoilMoisture, mqtt, dht, wifi),
+        // sensorFactory.create(SensorType::AirTemperature, mqtt, dht, wifi),
+        // sensorFactory.create(SensorType::WaterLevel, mqtt, dht, wifi),
+        // sensorFactory.create(SensorType::SignalStrength, mqtt, dht, wifi),
+    };
+    std::vector<std::shared_ptr<SensorClient>> camSensors = {
+        sensorFactory.create(SensorType::Camera, mqtt, dht, wifi),
     };
 
-    std::array<std::shared_ptr<PollingManager>, 2> sensorManagers = {
+    std::array<std::shared_ptr<PollingManager>, 4> sensorManagers = {
         std::make_shared<SensorReader>(sensors, 3000),
-        std::make_shared<SensorPublisher>(sensors, 20000)};
+        std::make_shared<SensorPublisher>(sensors, 20000),
+        std::make_shared<SensorReader>(camSensors, 2000),
+        std::make_shared<SensorPublisher>(camSensors, 3000)};
+
     sensorManagers.at(0)->start();
+    // sensorManagers.at(0)->resume();
     sensorManagers.at(1)->start();
+    sensorManagers.at(2)->start();
+    sensorManagers.at(3)->start();
 
     mqtt->registerOnDisconnected([mqtt, &actuatorFactory, &sensorFactory,
                                   &sensorManagers, wifi](MqttClient& client) {
@@ -82,14 +92,18 @@ extern "C" void app_main(void) {
                 manager->resume();
             }
         }
-        auto atomize = actuatorFactory.create(ActuatorType::Atomize, mqtt);
-        auto fan = actuatorFactory.create(ActuatorType::Fan, mqtt);
-        auto heating = actuatorFactory.create(ActuatorType::HeatingMat, mqtt);
-        auto water = actuatorFactory.create(ActuatorType::Water, mqtt);
 
+        // auto atomize = actuatorFactory.create(ActuatorType::Atomize, mqtt);
+        auto fan = actuatorFactory.create(ActuatorType::Fan, mqtt);
+        // auto heating = actuatorFactory.create(ActuatorType::HeatingMat,
+        // mqtt); auto water = actuatorFactory.create(ActuatorType::Water,
+        // mqtt);
+
+        // auto deviceHandler = std::make_shared<DeviceControlHandler>(
+        //     std::move(atomize), std::move(fan), std::move(heating),
+        //     std::move(water));
         auto deviceHandler = std::make_shared<DeviceControlHandler>(
-            std::move(atomize), std::move(fan), std::move(heating),
-            std::move(water));
+            nullptr, std::move(fan), nullptr, nullptr);
         auto resetHandler = std::make_shared<ResetHandler>(wifi, mqtt);
         auto stopHandler = std::make_shared<StopHandler>(mqtt, sensorManagers);
         auto resumeHandler = std::make_shared<ResumeHandler>(sensorManagers);

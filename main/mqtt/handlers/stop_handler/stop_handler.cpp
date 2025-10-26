@@ -11,7 +11,7 @@ constexpr const char* TAG = "StopHandler";
 }
 
 StopHandler::StopHandler(std::shared_ptr<MqttClient> mqtt,
-                         std::array<std::shared_ptr<PollingManager>, 2> sensors)
+                         std::array<std::shared_ptr<PollingManager>, 4> sensors)
     : mqtt(std::move(mqtt)), sensors(std::move(sensors)) {}
 
 void StopHandler::operate(const std::string& topic,

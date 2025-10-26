@@ -21,10 +21,10 @@ GpioActuatorClient::GpioActuatorClient(std::shared_ptr<MqttClient> mqttClient,
 
 bool GpioActuatorClient::performTurnOn() {
     ESP_LOGI(TAG, "Turning ON GPIO actuator on GPIO %d", gpio);
-    return gpio_set_level(gpio, 1) == ESP_OK;
+    return gpio_set_level(gpio, 0) == ESP_OK;
 }
 
 bool GpioActuatorClient::performTurnOff() {
     ESP_LOGI(TAG, "Turning OFF GPIO actuator on GPIO %d", gpio);
-    return gpio_set_level(gpio, 0) == ESP_OK;
+    return gpio_set_level(gpio, 1) == ESP_OK;
 }

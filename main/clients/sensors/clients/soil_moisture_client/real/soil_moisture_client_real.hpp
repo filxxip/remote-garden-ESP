@@ -1,13 +1,15 @@
 #pragma once
+#include "../../sensor_client.hpp"
+#include "driver/adc.h"
 
-#include "clients/sensors/clients/adc_sensor_client.hpp"
-
-class SoilMoistureClientReal final : public AdcSensorClient {
+class SoilMoistureClientReal : public SensorClient {
    public:
     SoilMoistureClientReal(std::shared_ptr<MqttClient> mqttClient,
-                           const adc_unit_t adcUnit,
-                           const adc_channel_t adcChannel);
+                           adc1_channel_t channel);
 
    protected:
-    float convertRawToValue(const int raw) const override;
+    float readValue() override;
+
+   private:
+    adc1_channel_t adcChannel;
 };

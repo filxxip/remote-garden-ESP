@@ -12,6 +12,7 @@ idf_component_register(
         clients/actuators/clients/gpio_actuator_client.cpp
         clients/actuators/clients/mock_actuator_client.cpp
         clients/actuators/factory/actuator_factory.cpp
+        clients/sensors/clients/dht_11_client.cpp
 
         clients/sensors/clients/camera_client/real/camera_client_real.cpp
         clients/sensors/clients/camera_client/camera_client.cpp
@@ -23,8 +24,8 @@ idf_component_register(
         clients/sensors/clients/air_humidity_client/mock/air_humidity_client_mock.cpp
         clients/sensors/clients/air_humidity_client/real/air_humidity_client_real.cpp
 
-        clients/sensors/clients/battery_client/mock/battery_sensor_client_mock.cpp
-        clients/sensors/clients/battery_client/real/battery_sensor_client_real.cpp
+        clients/sensors/clients/water_level_client/mock/water_level_client_mock.cpp
+        clients/sensors/clients/water_level_client/real/water_level_client_real.cpp
 
         clients/sensors/clients/light_client/mock/light_sensor_client_mock.cpp
         clients/sensors/clients/light_client/real/light_sensor_client_real.cpp
@@ -68,5 +69,5 @@ idf_component_register(
         wifi_manager/wifi_manager.cpp
 
     INCLUDE_DIRS "."
-    REQUIRES bt nvs_flash mqtt json driver esp_adc spiffs mbedtls esp_http_client littlefs
+    REQUIRES bt nvs_flash mqtt json driver esp_adc spiffs mbedtls esp_http_client littlefs 
 )

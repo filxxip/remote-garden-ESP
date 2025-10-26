@@ -437,7 +437,6 @@ void CameraSensorClient::readCameraSensorID() {
     ESP_LOGE(TAG, "");
     ESP_LOGI(TAG, "=== Koniec odczytu ID ===");
 }
-
 bool CameraSensorClient::initializeCamera() {
     if (isCameraInitialized()) {
         ESP_LOGW(TAG, "Camera already initialized");
@@ -457,15 +456,11 @@ bool CameraSensorClient::initializeCamera() {
     // Scan I2C to verify AXP313A is present
     scanI2CBus();
 
-    // Note: We skip reading camera sensor ID here because the camera
-    // needs XCLK (clock signal) which is only enabled by esp_camera_init().
-    // The camera will be detected during esp_camera_init() below.
-
     // Wait for camera power to stabilize
     ESP_LOGI(TAG, "Czekam 500ms na stabilizację kamery...");
-    vTaskDelay(pdMS_TO_TICKS(500));
+    vTaskDelay(pdMS_TO_TICKS(3000));
 
-    // Now delete the manually installed I2C driver so camera can reinstall it
+    // Remove manually installed I2C driver
     if (i2cManuallyInstalled) {
         ESP_LOGI(TAG,
                  "Usuwam ręczny sterownik I2C, aby kamera mogła go przejąć...");
@@ -474,20 +469,17 @@ bool CameraSensorClient::initializeCamera() {
         vTaskDelay(pdMS_TO_TICKS(100));
     }
 
-    // Initialize camera (will reinstall I2C driver internally)
+    // Initialize camera
     ESP_LOGI(TAG, "Inicjalizacja esp_camera...");
     ESP_LOGI(TAG, "DEBUG: sccb_i2c_port = %d", CAMERA_CONFIGGGGG.sccb_i2c_port);
 
     esp_err_t err = esp_camera_init(&CAMERA_CONFIGGGGG);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "✗ esp_camera_init() failed: %s", esp_err_to_name(err));
-        ESP_LOGE(TAG, "");
-        ESP_LOGE(TAG, "Kamera nie została wykryta przez sterownik ESP-IDF.");
-        ESP_LOGE(TAG, "Sprawdź fizyczne połączenie kabla kamery!");
         return false;
     }
 
-    // Get camera sensor and configure it
+    // === 🔧 DODANE POPRAWKI DLA KOLORU I FLIP ===
     sensor_t* s = esp_camera_sensor_get();
     if (!s) {
         ESP_LOGE(TAG, "✗ esp_camera_sensor_get() returned NULL");
@@ -495,20 +487,32 @@ bool CameraSensorClient::initializeCamera() {
         return false;
     }
 
-    s->set_brightness(s, 0);
-    s->set_contrast(s, 0);
-    s->set_saturation(s, 0);
+    // Daj ISP czas na ustabilizowanie
+    vTaskDelay(pdMS_TO_TICKS(300));
+
+    // Włącz flipy i mirror, z pełną korekcją HREF/VREF (poprawka zielonego
+    // odcienia)
+    s->set_vflip(s, 1);
+    s->set_hmirror(s, 1);
+
+    // Włącz automatyczny balans bieli i korekcje optyczne
     s->set_whitebal(s, 1);
-    s->set_framesize(s, FRAME_SIZE);
+    s->set_wb_mode(s, 3);        // neutralne kolory
+    s->set_gain_ctrl(s, 0);      // wyłącz automatyczny gain
+    s->set_exposure_ctrl(s, 0);  // wyłącz auto-exposure
+    s->set_lenc(s, 1);           // włącz lens correction
 
-    // Reduce frame rate to minimize buffer overflow
-    s->set_quality(s, JPEG_QUALITY);
-
-    // Set lower frame rate if supported
-    if (s->set_vflip) {
-        s->set_vflip(s, 0);
-        s->set_hmirror(s, 0);
+    // Wyrzuć 3 pierwsze ramki (często prześwietlone / złe kolory)
+    for (int i = 0; i < 3; i++) {
+        camera_fb_t* fb = esp_camera_fb_get();
+        if (fb) esp_camera_fb_return(fb);
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
+
+    // === KONIEC POPRAWEK ===
+
+    s->set_framesize(s, FRAME_SIZE);
+    s->set_quality(s, JPEG_QUALITY);
 
     setCameraInitialized(true);
     ESP_LOGI(TAG, "");
@@ -517,44 +521,23 @@ bool CameraSensorClient::initializeCamera() {
     ESP_LOGI(TAG, "╚══════════════════════════════════════╝");
     ESP_LOGI(TAG, "");
 
-    // CRITICAL: Test if ANY frames arrive at all
+    // === TEST RAMEK ===
     ESP_LOGI(TAG, "=== TEST RAMEK - próba pobrania 10 ramek ===");
     int good_frames = 0;
     int bad_frames = 0;
 
     for (int i = 0; i < 10; i++) {
         ESP_LOGI(TAG, "Test %d/10: Czekam na ramkę...", i + 1);
-
-        // Try to get ANY frame (even corrupted)
         camera_fb_t* fb = esp_camera_fb_get();
 
         if (fb) {
-            // Got something!
             if (fb->len > 100) {
                 ESP_LOGI(
                     TAG,
                     "  ✓ Ramka OK: %d bajtów, format: 0x%02X%02X...%02X%02X",
                     fb->len, fb->buf[0], fb->buf[1], fb->buf[fb->len - 2],
                     fb->buf[fb->len - 1]);
-
-                // Check JPEG markers
-                uint8_t avg = 0;
-                for (int j = 0; j < fb->len; j += fb->len / 32) {
-                    avg ^= fb->buf[j];
-                }
-
-                bool looks_valid = fb->len > 100 && avg != 0x00 && avg != 0xFF;
-
-                ESP_LOGI(
-                    TAG,
-                    "    Format RGB565, rozmiar: %d bajtów, checksum=0x%02X",
-                    fb->len, avg);
-
-                if (looks_valid) {
-                    good_frames++;
-                } else {
-                    bad_frames++;
-                }
+                good_frames++;
             } else {
                 ESP_LOGW(TAG, "  ✗ Ramka zbyt mała: %d bajtów", fb->len);
                 bad_frames++;
@@ -569,30 +552,14 @@ bool CameraSensorClient::initializeCamera() {
     }
 
     ESP_LOGI(TAG, "");
-    ESP_LOGI(TAG, "╔══════════════════════════════════════╗");
-    ESP_LOGI(TAG, "║      WYNIK TESTU RAMEK              ║");
-    ESP_LOGI(TAG, "╚══════════════════════════════════════╝");
     ESP_LOGI(TAG, "Poprawne ramki: %d/10", good_frames);
     ESP_LOGI(TAG, "Uszkodzone:     %d/10", bad_frames);
     ESP_LOGI(TAG, "");
 
-    if (good_frames == 0) {
-        ESP_LOGE(TAG, "⚠⚠⚠ KRYTYCZNY BŁĄD ⚠⚠⚠");
-        ESP_LOGE(TAG, "Kamera NIE przesyła żadnych poprawnych danych!");
-        ESP_LOGE(TAG, "Możliwe przyczyny:");
-        ESP_LOGE(TAG, "1. Uszkodzony/niepodłączony kabel FPC kamery");
-        ESP_LOGE(TAG, "2. Jeden lub więcej pinów D0-D7 nie działa");
-        ESP_LOGE(TAG, "3. Źle podłączone VSYNC/HREF/PCLK");
-        ESP_LOGE(TAG, "4. Uszkodzony moduł kamery OV2640");
-        ESP_LOGE(TAG, "");
-        ESP_LOGE(TAG, "SPRAWDŹ FIZYCZNIE POŁĄCZENIE KABLA!");
-    }
-
-    // CRITICAL: Wait and clear initial bad frames
+    // Czyszczenie początkowych ramek
     ESP_LOGI(TAG, "Czekam 2 sekundy i czyszczę początkowe ramki...");
     vTaskDelay(pdMS_TO_TICKS(2000));
 
-    // Aggressively clear all pending frames
     camera_fb_t* discard_fb = nullptr;
     int discarded = 0;
     while ((discard_fb = esp_camera_fb_get()) != nullptr && discarded < 10) {

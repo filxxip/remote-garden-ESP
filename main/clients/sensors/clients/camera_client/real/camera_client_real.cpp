@@ -39,7 +39,7 @@ constexpr int PIN_D9 = 48;
 
 constexpr int XCLK_FREQ_HZ = 10000000;  // 20MHz - reduces FB-OVF errors
 constexpr framesize_t FRAME_SIZE = FRAMESIZE_96X96;  // Back to QQVGA
-constexpr int JPEG_QUALITY = 15;                     // Better quality
+constexpr int JPEG_QUALITY = 5;                      // Better quality
 constexpr int FB_COUNT = 2;                          // 2 buffers
 
 const camera_config_t CAMERA_CONFIGGGGG = {

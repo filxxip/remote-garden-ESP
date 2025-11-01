@@ -15,6 +15,7 @@
 #include "mqtt/mqtt_client/mqtt_client_impl.hpp"
 #include "polling_manager/sensor_polling_manager/sensor_polling_manager.hpp"
 #include "polling_manager/sensor_polling_manager/sensor_publisher/sensor_publisher.hpp"
+#include "polling_manager/sensor_polling_manager/sensor_publisher_reader/sensor_publisher_reader.hpp"
 #include "polling_manager/sensor_polling_manager/sensor_reader/sensor_reader.hpp"
 #include "utils/device_provisioner/device_provisioner.hpp"
 #include "utils/littlefs_manager/littlefs_manager.hpp"
@@ -63,16 +64,16 @@ extern "C" void app_main(void) {
     };
 
     std::array<std::shared_ptr<PollingManager>, 4> sensorManagers = {
-        std::make_shared<SensorReader>(sensors, 3000),
-        std::make_shared<SensorPublisher>(sensors, 20000),
-        std::make_shared<SensorReader>(camSensors, 2000),
-        std::make_shared<SensorPublisher>(camSensors, 3000)};
+        // std::make_shared<SensorReader>(sensors, 3000),
+        // std::make_shared<SensorPublisher>(sensors, 20000),
+        std::make_shared<SensorPublisherReader>(camSensors, 5000),
+    };
 
     sensorManagers.at(0)->start();
     // sensorManagers.at(0)->resume();
-    sensorManagers.at(1)->start();
-    sensorManagers.at(2)->start();
-    sensorManagers.at(3)->start();
+    // sensorManagers.at(1)->start();
+    // sensorManagers.at(2)->start();
+    // sensorManagers.at(3)->start();
 
     mqtt->registerOnDisconnected([mqtt, &actuatorFactory, &sensorFactory,
                                   &sensorManagers, wifi](MqttClient& client) {

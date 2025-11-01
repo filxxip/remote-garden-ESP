@@ -55,6 +55,7 @@ idf_component_register(
         polling_manager/sensor_polling_manager/sensor_polling_manager.cpp
         polling_manager/sensor_polling_manager/sensor_publisher/sensor_publisher.cpp
         polling_manager/sensor_polling_manager/sensor_reader/sensor_reader.cpp
+        polling_manager/sensor_polling_manager/sensor_publisher_reader/sensor_publisher_reader.cpp
 
         utils/crypto/crypto.cpp
         utils/device_provisioner/device_provisioner.cpp

@@ -36,6 +36,8 @@ void MqttClient::init(const char* brokerUri) {
     mqtt_cfg.broker.verification.certificate = caCert.c_str();
     mqtt_cfg.broker.verification.certificate_len = 0;
     mqtt_cfg.broker.verification.skip_cert_common_name_check = false;
+    mqtt_cfg.buffer.size = 16384;
+    mqtt_cfg.task.stack_size = 16384;
 
     topicPrefix = deviceId + "/";
     auto fullTopic = topicPrefix.value() + "status";

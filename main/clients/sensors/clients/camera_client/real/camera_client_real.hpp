@@ -1,18 +1,18 @@
 #pragma once
 
+#include <vector>
+
 #include "../camera_client.hpp"
+#include "esp_camera.h"
+#include "esp_log.h"
 
 class CameraSensorClient : public BaseCameraSensorClient {
    public:
-    CameraSensorClient(std::shared_ptr<MqttClient> mqttClient,
-                       const SensorType type);
-    ~CameraSensorClient() override;
+    explicit CameraSensorClient(std::shared_ptr<MqttClient> mqttClient,
+                                SensorType type, size_t maxCacheSize = 10);
 
    protected:
-    bool captureImage(std::vector<uint8_t>& outImage) override;
     bool initializeCamera() override;
     void cleanupCamera() override;
-    void scanI2CBus();
-    void readCameraSensorID();
-    bool enableCameraPower();
+    bool captureImage(std::vector<uint8_t>& outImage) override;
 };

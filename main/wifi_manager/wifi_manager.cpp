@@ -45,6 +45,8 @@ bool WifiManager::connect(const std::string& ssid, const std::string& pass,
             sizeof(wifi_config.sta.ssid));
     strncpy((char*)wifi_config.sta.password, pass.c_str(),
             sizeof(wifi_config.sta.password));
+    // wifi_config.sta.threshold.rssi = -127;
+    // wifi_config.sta.threshold.authmode = WIFI_AUTH_OPEN;
 
     esp_wifi_disconnect();
     vTaskDelay(pdMS_TO_TICKS(100));

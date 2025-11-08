@@ -5,8 +5,8 @@
 namespace {
 const std::unordered_map<ActuatorType, gpio_num_t> gpioMap = {
     {ActuatorType::Fan, GPIO_NUM_18},
-    {ActuatorType::Water, GPIO_NUM_5},
-    {ActuatorType::Atomize, GPIO_NUM_16},
+    {ActuatorType::Water, GPIO_NUM_3},
+    {ActuatorType::Atomize, GPIO_NUM_9},
     {ActuatorType::HeatingMat, GPIO_NUM_18},
 };
 }

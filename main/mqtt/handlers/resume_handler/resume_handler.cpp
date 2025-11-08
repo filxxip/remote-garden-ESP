@@ -11,12 +11,18 @@ constexpr const char* TAG = "ResumeHandler";
 }
 
 ResumeHandler::ResumeHandler(
-    std::array<std::shared_ptr<PollingManager>, 4> sensors)
-    : sensors(std::move(sensors)) {}
+    std::shared_ptr<MqttClient> mqtt,
+    std::array<std::shared_ptr<PollingManager>, 4> sensors,
+    std::shared_ptr<DeviceControlHandler> deviceHandler)
+    : mqtt(std::move(mqtt)),
+      sensors(std::move(sensors)),
+      deviceHandler(std::move(deviceHandler)) {}
 
 void ResumeHandler::operate(const std::string& topic,
                             const std::string& payload) {
     ESP_LOGI(TAG, "Received message on %s: %s", topic.c_str(), payload.c_str());
+
+    mqtt->subscribe("device/control", deviceHandler);
 
     for (auto& sensor : sensors) {
         if (sensor) {

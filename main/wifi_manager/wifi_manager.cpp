@@ -21,6 +21,8 @@ void WifiManager::init() {
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+    wifi_country_t country = {"PL", 1, 13, WIFI_COUNTRY_POLICY_MANUAL};
+    esp_wifi_set_country(&country);
 
     ESP_ERROR_CHECK(esp_event_handler_instance_register(
         IP_EVENT, IP_EVENT_STA_GOT_IP, &WifiManager::onGotIp, this, nullptr));
@@ -43,8 +45,11 @@ bool WifiManager::connect(const std::string& ssid, const std::string& pass,
             sizeof(wifi_config.sta.ssid));
     strncpy((char*)wifi_config.sta.password, pass.c_str(),
             sizeof(wifi_config.sta.password));
-    // @TODO store pass and ssid in nvs (remove after reset) and try to connect
-    // automatically after reboot
+    // wifi_config.sta.threshold.rssi = -127;
+    // wifi_config.sta.threshold.authmode = WIFI_AUTH_OPEN;
+
+    esp_wifi_disconnect();
+    vTaskDelay(pdMS_TO_TICKS(100));
 
     esp_err_t err = esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
     if (err != ESP_OK) {

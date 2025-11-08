@@ -70,6 +70,9 @@ std::shared_ptr<SensorClient> AdcSensorFactory::create(
         case SensorType::WaterLevel:
             return std::make_shared<WaterLevelClientReal>(std::move(mqtt),
                                                           I2C_NUM_1);
+        case SensorType::SignalStrength:
+            return std::make_shared<SignalStrengthClientReal>(std::move(mqtt),
+                                                              wifi);
 
         default:
             return nullptr;

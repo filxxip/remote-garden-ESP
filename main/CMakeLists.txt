@@ -15,6 +15,7 @@ idf_component_register(
         clients/sensors/clients/dht_11_client.cpp
 
         clients/sensors/clients/camera_client/real/camera_client_real.cpp
+        clients/sensors/clients/camera_client/real/robot.cpp
         clients/sensors/clients/camera_client/camera_client.cpp
         clients/sensors/clients/camera_client/mock/camera_client_mock.cpp
 

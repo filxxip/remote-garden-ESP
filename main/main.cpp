@@ -52,27 +52,27 @@ extern "C" void app_main(void) {
     AdcSensorFactory sensorFactory;
 
     std::vector<std::shared_ptr<SensorClient>> sensors = {
-        sensorFactory.create(SensorType::Light, mqtt, dht, wifi),
-        sensorFactory.create(SensorType::AirHumidity, mqtt, dht, wifi),
-        sensorFactory.create(SensorType::SoilMoisture, mqtt, dht, wifi),
-        sensorFactory.create(SensorType::AirTemperature, mqtt, dht, wifi),
-        sensorFactory.create(SensorType::WaterLevel, mqtt, dht, wifi),
-        sensorFactory.create(SensorType::SignalStrength, mqtt, dht, wifi),
+        // sensorFactory.create(SensorType::Light, mqtt, dht, wifi),
+        // sensorFactory.create(SensorType::AirHumidity, mqtt, dht, wifi),
+        // sensorFactory.create(SensorType::SoilMoisture, mqtt, dht, wifi),
+        // sensorFactory.create(SensorType::AirTemperature, mqtt, dht, wifi),
+        // sensorFactory.create(SensorType::WaterLevel, mqtt, dht, wifi),
+        // sensorFactory.create(SensorType::SignalStrength, mqtt, dht, wifi),
     };
     std::vector<std::shared_ptr<SensorClient>> camSensors = {
         sensorFactory.create(SensorType::Camera, mqtt, dht, wifi),
     };
 
     std::array<std::shared_ptr<PollingManager>, 4> sensorManagers = {
-        std::make_shared<SensorReader>(sensors, 3000),
-        std::make_shared<SensorPublisher>(sensors, 20000),
+        // std::make_shared<SensorReader>(sensors, 3000),
+        // std::make_shared<SensorPublisher>(sensors, 20000),
         std::make_shared<SensorPublisherReader>(camSensors, 5000),
     };
 
     sensorManagers.at(0)->start();
-    // sensorManagers.at(0)->resume();
-    sensorManagers.at(1)->start();
-    sensorManagers.at(2)->start();
+    sensorManagers.at(0)->resume();
+    // sensorManagers.at(1)->start();
+    // sensorManagers.at(2)->start();
     // sensorManagers.at(3)->start();
 
     gpio_set_level(GPIO_NUM_18, 1);
@@ -122,7 +122,7 @@ extern "C" void app_main(void) {
 
     CredentialsReceiver credentialReceiver{std::make_unique<BluetoothManager>(),
                                            wifi, mqtt};
-    credentialReceiver.init();
+    // credentialReceiver.init();
 
     while (true) {
         vTaskDelay(pdMS_TO_TICKS(10000));

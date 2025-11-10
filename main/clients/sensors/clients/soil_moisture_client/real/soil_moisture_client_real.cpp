@@ -9,10 +9,14 @@ const char* TAG = "SoilMoistureClientReal";
 SoilMoistureClientReal::SoilMoistureClientReal(
     std::shared_ptr<MqttClient> mqttClient, adc1_channel_t channel)
     : SensorClient(std::move(mqttClient), SensorType::SoilMoisture),
-      adcChannel(channel) {
+      adcChannel(channel) {}
+
+bool SoilMoistureClientReal::initializeImpl() {
     adc1_config_width(ADC_WIDTH_BIT_12);
     adc1_config_channel_atten(adcChannel, ADC_ATTEN_DB_11);
     ESP_LOGI(TAG, "Soil moisture sensor on ADC channel %d", adcChannel);
+
+    return true;
 }
 
 float SoilMoistureClientReal::readValue() {

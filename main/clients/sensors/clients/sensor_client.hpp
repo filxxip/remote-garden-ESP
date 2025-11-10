@@ -12,17 +12,20 @@ class SensorClient {
     SensorClient(std::shared_ptr<MqttClient> mqttClient, const SensorType type);
     virtual ~SensorClient() = default;
 
+    void initialize();
+    bool isInitialized() const { return isInitializedValue; }
     void storeReading();
     virtual void flushCache();
 
    protected:
     virtual float readValue() = 0;
+    virtual bool initializeImpl() { return true; }
 
-   protected:
     std::shared_ptr<MqttClient> mqtt;
     SensorType sensorType;
 
    private:
     std::string topic;
     std::vector<float> cache;
+    bool isInitializedValue = false;
 };

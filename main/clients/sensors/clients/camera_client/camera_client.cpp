@@ -13,7 +13,6 @@ BaseCameraSensorClient::BaseCameraSensorClient(
     std::shared_ptr<MqttClient> mqttClient, const SensorType type,
     size_t maxCacheSize)
     : SensorClient(std::move(mqttClient), type),
-      cameraInitialized(false),
       imageTopic(IMAGE_TOPIC),
       captureCount(0),
       errorCount(0),
@@ -24,13 +23,13 @@ BaseCameraSensorClient::BaseCameraSensorClient(
 }
 
 float BaseCameraSensorClient::readValue() {
-    if (!cameraInitialized) {
-        if (!initializeCamera()) {
-            ESP_LOGE(TAG, "Failed to initialize camera");
-            errorCount++;
-            return 0.0f;
-        }
-    }
+    // if (!cameraInitialized) {
+    //     if (!initializeCamera()) {
+    //         ESP_LOGE(TAG, "Failed to initialize camera");
+    //         errorCount++;
+    //         return 0.0f;
+    //     }
+    // }
 
     std::vector<uint8_t> imageData;
     if (!captureImage(imageData)) {
@@ -65,8 +64,7 @@ void BaseCameraSensorClient::flushImages() {
     ESP_LOGI(TAG, "Flushing %zu cached images (chunked MQTT)",
              imageCache.size());
 
-    const size_t CHUNK_SIZE =
-        4096;  // maks. rozmiar pojedynczej wiadomości MQTT
+    const size_t CHUNK_SIZE = 4096;
     bool allSuccess = true;
 
     for (size_t imgIndex = 0; imgIndex < imageCache.size(); ++imgIndex) {
@@ -74,7 +72,6 @@ void BaseCameraSensorClient::flushImages() {
         const size_t totalSize = image.size();
         const size_t totalParts = (totalSize + CHUNK_SIZE - 1) / CHUNK_SIZE;
 
-        // unikalny identyfikator ramki
         std::string frameId = std::to_string(imgIndex);
         ESP_LOGI(TAG, "Publishing image %zu (%zu bytes) as %zu parts", imgIndex,
                  totalSize, totalParts);
@@ -89,7 +86,7 @@ void BaseCameraSensorClient::flushImages() {
                                        image.begin() + offset + len);
 
             if (!mqtt->publishRaw(topic, chunk)) {
-                ESP_LOGE(TAG, "✗ Failed to publish part %zu/%zu of image %zu",
+                ESP_LOGE(TAG, "Failed to publish part %zu/%zu of image %zu",
                          part + 1, totalParts, imgIndex);
                 allSuccess = false;
                 break;
@@ -97,11 +94,9 @@ void BaseCameraSensorClient::flushImages() {
 
             ESP_LOGD(TAG, "✓ Published part %zu/%zu (%zu bytes)", part + 1,
                      totalParts, len);
-            vTaskDelay(
-                pdMS_TO_TICKS(50));  // mała przerwa, by uniknąć zalania MQTT
+            vTaskDelay(pdMS_TO_TICKS(50));
         }
 
-        // sygnał zakończenia ramki
         std::string endTopic = imageTopic + "/" + frameId + "/end";
         std::string endMsg = "frame_end";
         mqtt->publishRaw(endTopic,
@@ -109,11 +104,11 @@ void BaseCameraSensorClient::flushImages() {
     }
 
     if (allSuccess) {
-        ESP_LOGI(TAG, "✓ Successfully flushed %zu images (chunked)",
+        ESP_LOGI(TAG, "Successfully flushed %zu images (chunked)",
                  imageCache.size());
         imageCache.clear();
     } else {
-        ESP_LOGW(TAG, "⚠ Some images failed to publish; keeping in cache");
+        ESP_LOGW(TAG, "Some images failed to publish; keeping in cache");
     }
 }
 

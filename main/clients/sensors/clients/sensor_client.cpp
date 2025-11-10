@@ -20,6 +20,14 @@ void SensorClient::storeReading() {
              enumToString(sensorType).c_str(), value);
 }
 
+void SensorClient::initialize() {
+    if (!isInitialized()) {
+        isInitializedValue = initializeImpl();
+    } else {
+        ESP_LOGI(TAG, "Already initialized");
+    }
+}
+
 void SensorClient::flushCache() {
     if (cache.empty()) {
         ESP_LOGW(TAG, "No readings to flush for sensor '%s'",

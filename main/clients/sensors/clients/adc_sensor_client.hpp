@@ -12,6 +12,8 @@ class AdcSensorClient : public SensorClient {
                     const adc_channel_t adcChannel);
     ~AdcSensorClient() override;
 
+    bool initializeImpl() override;
+
    protected:
     virtual float convertRawToValue(int raw) const = 0;
     float readValue() override;
@@ -19,4 +21,5 @@ class AdcSensorClient : public SensorClient {
    private:
     adc_oneshot_unit_handle_t adcHandle;
     adc_channel_t channel;
+    const adc_unit_t adcUnit;
 };

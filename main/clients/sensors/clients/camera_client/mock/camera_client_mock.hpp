@@ -11,7 +11,6 @@ class MockCameraSensorClient : public BaseCameraSensorClient {
 
    protected:
     bool captureImage(std::vector<uint8_t>& outImage) override;
-    bool initializeCamera() override;
     void cleanupCamera() override;
 
    private:

@@ -5,11 +5,10 @@
 namespace {
 const char* TAG = "LightSensorClientReal";
 
-// BH1750 Commands
 constexpr uint8_t BH1750_POWER_ON = 0x01;
 constexpr uint8_t BH1750_POWER_DOWN = 0x00;
 constexpr uint8_t BH1750_CONTINUOUS_HIGH_RES_MODE = 0x10;
-constexpr uint8_t BH1750_ADDR = 0x23;  // When ADDR pin is LOW
+constexpr uint8_t BH1750_ADDR = 0x23;
 }  // namespace
 
 LightSensorClientReal::LightSensorClientReal(
@@ -18,28 +17,32 @@ LightSensorClientReal::LightSensorClientReal(
     : SensorClient(std::move(mqttClient), SensorType::Light),
       port(i2cPort),
       address(BH1750_ADDR),
-      i2c_initialized(false) {
-    // Konfiguracja I2C
+      i2c_initialized(false),
+      sdaPin(sdaPin),
+      sclPin(sclPin) {}
+
+bool LightSensorClientReal::initializeImpl() {
     i2c_config_t conf = {};
     conf.mode = I2C_MODE_MASTER;
     conf.sda_io_num = sdaPin;
     conf.scl_io_num = sclPin;
     conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
     conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
-    conf.master.clk_speed = 100000;  // 100kHz
+    conf.master.clk_speed = 100000;
 
     ESP_ERROR_CHECK(i2c_param_config(port, &conf));
     ESP_ERROR_CHECK(i2c_driver_install(port, conf.mode, 0, 0, 0));
     i2c_initialized = true;
 
-    // Inicjalizacja BH1750
     writeCommand(BH1750_POWER_ON);
     vTaskDelay(pdMS_TO_TICKS(10));
     writeCommand(BH1750_CONTINUOUS_HIGH_RES_MODE);
-    vTaskDelay(pdMS_TO_TICKS(180));  // Wait for first measurement
+    vTaskDelay(pdMS_TO_TICKS(180));
 
     ESP_LOGI(TAG, "BH1750 initialized on I2C port %d (SDA=%d, SCL=%d)", port,
              sdaPin, sclPin);
+
+    return true;
 }
 
 LightSensorClientReal::~LightSensorClientReal() {

@@ -9,7 +9,7 @@
 
 class PollingManager {
    public:
-    PollingManager(int intervalMs = 5000);
+    PollingManager(int intervalMs = 5000, int memory = 3072);
     virtual ~PollingManager();
 
     virtual void pollAction() const = 0;
@@ -21,6 +21,7 @@ class PollingManager {
     static void pollingTask(void* pvParameters);
 
     int intervalMs;
+    int memory;
     TaskHandle_t taskHandle = nullptr;
     std::atomic<bool> isStopped{true};
 };

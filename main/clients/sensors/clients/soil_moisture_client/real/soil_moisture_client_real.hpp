@@ -7,6 +7,8 @@ class SoilMoistureClientReal : public SensorClient {
     SoilMoistureClientReal(std::shared_ptr<MqttClient> mqttClient,
                            adc1_channel_t channel);
 
+    bool initializeImpl() override;
+
    protected:
     float readValue() override;
 

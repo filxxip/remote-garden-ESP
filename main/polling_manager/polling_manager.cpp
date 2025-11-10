@@ -9,7 +9,8 @@ namespace {
 constexpr const char* TAG = "PollingManager";
 }
 
-PollingManager::PollingManager(int intervalMs) : intervalMs(intervalMs) {}
+PollingManager::PollingManager(int intervalMs, int memory)
+    : intervalMs(intervalMs), memory(memory) {}
 
 PollingManager::~PollingManager() {
     if (taskHandle) {
@@ -18,7 +19,7 @@ PollingManager::~PollingManager() {
 }
 
 void PollingManager::start() {
-    xTaskCreatePinnedToCore(pollingTask, "PollingTask", 5120, this, 5,
+    xTaskCreatePinnedToCore(pollingTask, "PollingTask", memory, this, 5,
                             &taskHandle, 1);
 }
 

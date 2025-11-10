@@ -65,7 +65,7 @@ std::shared_ptr<SensorClient> AdcSensorFactory::create(
 
         case SensorType::SoilMoisture:
             return std::make_shared<SoilMoistureClientReal>(std::move(mqtt),
-                                                            ADC1_CHANNEL_6);
+                                                            ADC2_CHANNEL_0);
 
         case SensorType::WaterLevel:
             return std::make_shared<WaterLevelClientReal>(std::move(mqtt),

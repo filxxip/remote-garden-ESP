@@ -10,7 +10,7 @@
 class SensorPollingManager : public PollingManager {
    public:
     SensorPollingManager(std::vector<std::shared_ptr<SensorClient>> sensors,
-                         int intervalMs = 5000);
+                         int intervalMs = 5000, int memory = 3072);
 
     void pollAction() const;
     virtual void action(const std::shared_ptr<SensorClient>& sensor) const = 0;

@@ -11,6 +11,8 @@ class LightSensorClientReal : public SensorClient {
 
     ~LightSensorClientReal();
 
+    bool initializeImpl() override;
+
    protected:
     float readValue() override;
 
@@ -21,4 +23,7 @@ class LightSensorClientReal : public SensorClient {
 
     esp_err_t writeCommand(uint8_t cmd);
     esp_err_t readLightLevel(uint16_t* lux);
+
+    gpio_num_t sdaPin;
+    gpio_num_t sclPin;
 };

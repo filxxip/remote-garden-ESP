@@ -11,8 +11,9 @@ class CameraSensorClient : public BaseCameraSensorClient {
     explicit CameraSensorClient(std::shared_ptr<MqttClient> mqttClient,
                                 SensorType type, size_t maxCacheSize = 10);
 
+    bool initializeImpl() override;
+
    protected:
-    bool initializeCamera() override;
     void cleanupCamera() override;
     bool captureImage(std::vector<uint8_t>& outImage) override;
 };

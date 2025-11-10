@@ -63,10 +63,22 @@ extern "C" void app_main(void) {
         sensorFactory.create(SensorType::Camera, mqtt, dht, wifi),
     };
 
+    std::function<void()> initializeMethod = [sensors, camSensors]() {
+        for (auto& sensor : camSensors) {
+            sensor->initialize();
+        }
+        vTaskDelay(pdMS_TO_TICKS(5000));
+        for (auto& sensor : sensors) {
+            sensor->initialize();
+        }
+    };
+
+    // camSensors[0]->initialize();
+
     std::array<std::shared_ptr<PollingManager>, 4> sensorManagers = {
         std::make_shared<SensorReader>(sensors, 3000),
         std::make_shared<SensorPublisher>(sensors, 20000),
-        std::make_shared<SensorPublisherReader>(camSensors, 5000),
+        std::make_shared<SensorPublisherReader>(camSensors, 1000, 5000),
     };
 
     sensorManagers.at(0)->start();
@@ -90,35 +102,39 @@ extern "C" void app_main(void) {
         }
     });
 
-    mqtt->registerOnConnected([mqtt, &actuatorFactory, &sensorFactory,
-                               &sensorManagers, wifi](MqttClient& client) {
-        for (auto& manager : sensorManagers) {
-            if (manager) {
-                manager->resume();
+    mqtt->registerOnConnected(
+        [mqtt, &actuatorFactory, &sensorFactory, &sensorManagers, wifi,
+         initializeMethod = std::move(initializeMethod)](MqttClient& client) {
+            initializeMethod();
+
+            for (auto& manager : sensorManagers) {
+                if (manager) {
+                    manager->resume();
+                }
             }
-        }
 
-        auto atomize = actuatorFactory.create(ActuatorType::Atomize, mqtt);
-        auto fan = actuatorFactory.create(ActuatorType::Fan, mqtt);
-        // auto heating = actuatorFactory.create(ActuatorType::HeatingMat,
-        // mqtt);
-        auto water = actuatorFactory.create(ActuatorType::Water, mqtt);
+            auto atomize = actuatorFactory.create(ActuatorType::Atomize, mqtt);
+            auto fan = actuatorFactory.create(ActuatorType::Fan, mqtt);
+            // auto heating = actuatorFactory.create(ActuatorType::HeatingMat,
+            // mqtt);
+            auto water = actuatorFactory.create(ActuatorType::Water, mqtt);
 
-        // auto deviceHandler = std::make_shared<DeviceControlHandler>(
-        //     std::move(atomize), std::move(fan), std::move(heating),
-        //     std::move(water));
-        auto deviceHandler = std::make_shared<DeviceControlHandler>(
-            std::move(atomize), std::move(fan), nullptr, std::move(water));
-        auto resetHandler = std::make_shared<ResetHandler>(wifi, mqtt);
-        auto stopHandler = std::make_shared<StopHandler>(mqtt, sensorManagers);
-        auto resumeHandler = std::make_shared<ResumeHandler>(
-            mqtt, sensorManagers, deviceHandler);
+            // auto deviceHandler = std::make_shared<DeviceControlHandler>(
+            //     std::move(atomize), std::move(fan), std::move(heating),
+            //     std::move(water));
+            auto deviceHandler = std::make_shared<DeviceControlHandler>(
+                std::move(atomize), std::move(fan), nullptr, std::move(water));
+            auto resetHandler = std::make_shared<ResetHandler>(wifi, mqtt);
+            auto stopHandler =
+                std::make_shared<StopHandler>(mqtt, sensorManagers);
+            auto resumeHandler = std::make_shared<ResumeHandler>(
+                mqtt, sensorManagers, deviceHandler);
 
-        mqtt->subscribe("device/control", std::move(deviceHandler));
-        mqtt->subscribe("reset", std::move(resetHandler));
-        mqtt->subscribe("stop", std::move(stopHandler));
-        mqtt->subscribe("resume", std::move(resumeHandler));
-    });
+            mqtt->subscribe("device/control", std::move(deviceHandler));
+            mqtt->subscribe("reset", std::move(resetHandler));
+            mqtt->subscribe("stop", std::move(stopHandler));
+            mqtt->subscribe("resume", std::move(resumeHandler));
+        });
 
     CredentialsReceiver credentialReceiver{std::make_unique<BluetoothManager>(),
                                            wifi, mqtt};

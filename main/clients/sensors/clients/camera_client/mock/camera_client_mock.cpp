@@ -25,24 +25,8 @@ MockCameraSensorClient::MockCameraSensorClient(
     ESP_LOGI(TAG, "[MOCK] Camera sensor client created");
 }
 
-bool MockCameraSensorClient::initializeCamera() {
-    if (isCameraInitialized()) {
-        ESP_LOGW(TAG, "[MOCK] Camera already initialized");
-        return true;
-    }
-
-    ESP_LOGI(TAG, "[MOCK] Initializing mock camera");
-    setCameraInitialized(true);
-    return true;
-}
-
 void MockCameraSensorClient::cleanupCamera() {
-    if (!isCameraInitialized()) {
-        return;
-    }
-
     ESP_LOGI(TAG, "[MOCK] Cleaning up mock camera");
-    setCameraInitialized(false);
 }
 
 bool MockCameraSensorClient::captureImage(std::vector<uint8_t>& outImage) {

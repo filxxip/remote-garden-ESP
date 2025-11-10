@@ -12,7 +12,7 @@
 #define CHAR_UUID_USER_KEY 0xFF03
 
 namespace {
-constexpr const char* MQTT_URL = "mqtts://192.168.100.3:8883";
+constexpr const char* MQTT_URL = "mqtts://vps-2505986b.vps.ovh.net:8883";
 constexpr const char* TAG = "CredentialsReceiver";
 constexpr const char* USER_KEY_PATH = "/littlefs/user.txt";
 

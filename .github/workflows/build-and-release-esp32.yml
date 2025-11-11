@@ -12,6 +12,17 @@ jobs:
     permissions:
       contents: write
     
+    strategy:
+      matrix:
+        mode: [local, prod]
+        include:
+          - mode: local
+            mode_name: development
+            artifact_name: esp32-firmware-latest-dev
+          - mode: prod
+            mode_name: production
+            artifact_name: esp32-firmware-latest-prod
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,7 +35,7 @@ jobs:
       - name: Build Docker image
         run: docker build -t esp32-builder -f .devcontainer/Dockerfile .devcontainer
 
-      - name: Build, package and upload firmware
+      - name: Build, package and upload firmware (${{ matrix.mode_name }})
         run: |
           docker run --rm \
             -v $PWD:/workspace \
@@ -33,11 +44,11 @@ jobs:
             -e CI=true \
             -e GITHUB_ACTIONS=true \
             esp32-builder \
-            bash -c "source /opt/esp/idf/export.sh && make upload VERSION=latest GITHUB_REPO=${{ github.repository }}"
+            bash -c "source /opt/esp/idf/export.sh && make release mode=${{ matrix.mode }} VERSION=latest GITHUB_REPO=${{ github.repository }}"
 
-      - name: Upload artifacts
+      - name: Upload artifacts (${{ matrix.mode_name }})
         uses: actions/upload-artifact@v4
         with:
-          name: esp32-firmware-latest
+          name: ${{ matrix.artifact_name }}
           path: release/*.tar.gz
           retention-days: 30

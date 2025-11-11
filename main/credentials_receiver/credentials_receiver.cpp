@@ -5,6 +5,7 @@
 #include "utils/device_provisioner/device_provisioner.hpp"
 #include "utils/file_manager/file_manager.hpp"
 #include "utils/nvs_manager/nvs_credentials_manager.hpp"
+#include "utils/options/options.hpp"
 #include "utils/scoped_lock/scoped_lock.hpp"
 
 #define CHAR_UUID_SSID 0xFF01
@@ -12,7 +13,6 @@
 #define CHAR_UUID_USER_KEY 0xFF03
 
 namespace {
-constexpr const char* MQTT_URL = "mqtts://vps-2505986b.vps.ovh.net:8883";
 constexpr const char* TAG = "CredentialsReceiver";
 constexpr const char* USER_KEY_PATH = "/littlefs/user.txt";
 
@@ -135,7 +135,7 @@ void CredentialsReceiver::onCredentialsReceived(const std::string& ssid,
                 ESP_LOGI(TAG, "Provisioning successful, initializing MQTT...");
 
                 if (!self->mqttInitialized) {
-                    self->mqtt->init(MQTT_URL);
+                    self->mqtt->init(Options::getMqttFullUrl());
                     self->mqttInitialized = true;
                 }
                 self->mqtt->start();

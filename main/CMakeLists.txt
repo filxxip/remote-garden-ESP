@@ -1,6 +1,8 @@
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(MQTT_PRODUCTION "Use production MQTT server" OFF)
+
 idf_component_register(
     SRCS
         main.cpp
@@ -67,9 +69,20 @@ idf_component_register(
         utils/http_manager/http_manager.cpp
         utils/littlefs_manager/littlefs_manager.cpp
         utils/scoped_lock/scoped_lock.cpp
+        utils/options/options.cpp
 
         wifi_manager/wifi_manager.cpp
 
     INCLUDE_DIRS "."
     REQUIRES bt nvs_flash mqtt json driver esp_adc spiffs mbedtls esp_http_client littlefs 
 )
+
+if(MQTT_PRODUCTION)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE 
+        URL="vps-2505986b.vps.ovh.net"
+        MQTT_PRODUCTION=1)
+    message(STATUS "Main component: Building for PRODUCTION - URL=vps-2505986b.vps.ovh.net")
+else()
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE URL="localhost")
+    message(STATUS "Main component: Building for DEVELOPMENT - URL=localhost")
+endif()

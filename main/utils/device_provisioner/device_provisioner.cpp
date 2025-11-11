@@ -6,6 +6,7 @@
 #include "utils/file_manager/file_manager.hpp"
 #include "utils/http_manager/http_manager.hpp"
 #include "utils/littlefs_manager/littlefs_manager.hpp"
+#include "utils/options/options.hpp"
 
 namespace {
 constexpr const char* TAG = "PROVISION";
@@ -16,7 +17,6 @@ constexpr const char* CLIENT_CERT_PATH = "/littlefs/client.crt";
 constexpr const char* CA_CERT_PATH = "/littlefs/ca.crt";
 constexpr const char* USER_KEY_PATH = "/littlefs/user.txt";
 
-constexpr const char* SERVER_URL = "https://vps-2505986b.vps.ovh.net/api";
 constexpr const char* PATH = "/v1/esp/register";
 
 bool readFile(const char* path, std::string& out) {
@@ -44,7 +44,7 @@ bool sendCsrAndGetCert(const std::string& deviceId,
                        const std::string& deviceSecret,
                        const std::string& userKey, const std::string& csrPem,
                        std::string& certOut) {
-    return HttpManager(SERVER_URL)
+    return HttpManager(Options::getServerUrl())
         .path(PATH)
         .contentType("application/x-pem-file")
         .header("X-Device-ID", deviceId)
